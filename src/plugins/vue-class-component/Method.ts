@@ -7,7 +7,7 @@ export const convertMethod: ASTConverter<ts.MethodDeclaration> = (node, options)
   const methodName = node.name.getText()
 
   const outputMethod = tsModule.createArrowFunction(
-    node.modifiers,
+    tsModule.getModifiers(node),
     node.typeParameters,
     node.parameters,
     node.type,

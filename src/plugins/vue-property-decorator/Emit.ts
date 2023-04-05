@@ -1,6 +1,6 @@
 import { ASTConverter, ASTResultKind, ReferenceKind } from '../types'
 import type ts from 'typescript'
-import { copySyntheticComments } from '../../utils'
+import { copySyntheticComments, getDecorator } from '../../utils'
 
 const emitDecoratorName = 'Emit'
 
@@ -9,12 +9,10 @@ const hyphenateRE = /\B([A-Z])/g
 const hyphenate = (str: string) => str.replace(hyphenateRE, '-$1').toLowerCase()
 
 export const convertEmitMethod: ASTConverter<ts.MethodDeclaration> = (node, options) => {
-  if (!node.decorators) {
-    return false
-  }
-  const decorator = node.decorators.find((el) => (el.expression as ts.CallExpression).expression.getText() === emitDecoratorName)
+
+  const tsModule = options.typescript;
+  const decorator = getDecorator(tsModule, node, emitDecoratorName);
   if (decorator) {
-    const tsModule = options.typescript
     const methodName = node.name.getText()
 
     const decoratorArguments = (decorator.expression as ts.CallExpression).arguments
@@ -63,7 +61,7 @@ export const convertEmitMethod: ASTConverter<ts.MethodDeclaration> = (node, opti
     }
 
     const outputMethod = tsModule.createArrowFunction(
-      node.modifiers,
+      tsModule.getModifiers(node),
       node.typeParameters,
       node.parameters,
       node.type,

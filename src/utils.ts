@@ -28,18 +28,23 @@ export function getDefaultExportNode (tsModule: typeof ts, sourceFile: ts.Source
   return getNodeFromExportNode(tsModule, exportNode)
 }
 
+export function getDecorator(tsModule: typeof ts, node: ts.Node, decName: string): ts.Decorator | undefined {
+  return getDecorators(tsModule, node)
+    .find((el) => (el.expression as ts.CallExpression).expression.getText() === decName);
+}
+
 export function getDecoratorNames (tsModule: typeof ts, node: ts.Node): string[] {
-  if (node.decorators) {
-    return node.decorators.map((el) => {
+  return getDecorators(tsModule, node).map((el) => {
       if (tsModule.isCallExpression(el.expression)) {
         return el.expression.expression.getText()
       } else {
         return el.expression.getText()
       }
-    })
-  }
+    });
+}
 
-  return []
+export function getDecorators(tsModule: typeof ts, node: ts.Node): readonly ts.Decorator[] {
+  return (tsModule.canHaveDecorators(node) ? tsModule.getDecorators(node) : []) ?? [];
 }
 
 const $internalHooks = new Map<string, string | false>([
@@ -47,6 +52,8 @@ const $internalHooks = new Map<string, string | false>([
   ['created', false],
   ['beforeMount', 'onBeforeMount'],
   ['mounted', 'onMounted'],
+  ['unmounted', 'onUnmounted'],
+  ['beforeUnmount', 'onBeforeUnmount'],
   ['beforeDestroy', 'onBeforeUnmount'],
   ['destroyed', 'onUnmounted'],
   ['beforeUpdate', 'onBeforeUpdate'],

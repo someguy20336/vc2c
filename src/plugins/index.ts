@@ -132,12 +132,12 @@ export function getASTResults (
 }
 
 export function convertASTResultToSetupFn (astResults: ASTResult<ts.Node>[], options: Vc2cOptions): ts.MethodDeclaration {
-  const tsModule = options.typescript
+  const tsModule = options.typescript.factory;
 
   const returnStatement = addTodoComment(
-    tsModule,
-    tsModule.createReturn(
-      tsModule.createObjectLiteral([
+    options.typescript,   // TODO: what
+    tsModule.createReturnStatement(
+      tsModule.createObjectLiteralExpression([
         ...astResults
           .filter((el) => el.kind === ASTResultKind.COMPOSITION)
           .reduce((array, el) => array.concat(el.attributes), [] as string[])
@@ -151,16 +151,14 @@ export function convertASTResultToSetupFn (astResults: ASTResult<ts.Node>[], opt
     false
   )
 
-  return tsModule.createMethod(
-    undefined,
+  return tsModule.createMethodDeclaration(
     undefined,
     undefined,
     tsModule.createIdentifier('setup'),
     undefined,
     undefined,
     [
-      tsModule.createParameter(
-        undefined,
+      tsModule.createParameterDeclaration(
         undefined,
         undefined,
         tsModule.createIdentifier(options.setupPropsKey),
@@ -168,8 +166,7 @@ export function convertASTResultToSetupFn (astResults: ASTResult<ts.Node>[], opt
         undefined,
         undefined
       ),
-      tsModule.createParameter(
-        undefined,
+      tsModule.createParameterDeclaration(
         undefined,
         undefined,
         tsModule.createIdentifier(options.setupContextKey),
@@ -195,7 +192,7 @@ export function convertASTResultToSetupFn (astResults: ASTResult<ts.Node>[], opt
 export function convertASTResultToImport (astResults: ASTResult<ts.Node>[], options: Vc2cOptions): ts.ImportDeclaration[] {
   interface Clause { named: Set<string>, default?: string }
 
-  const tsModule = options.typescript
+  const tsModule = options.typescript.factory;
   const importMap = new Map<string, Clause>()
   for (const result of astResults) {
     for (const importInfo of result.imports) {
@@ -211,22 +208,24 @@ export function convertASTResultToImport (astResults: ASTResult<ts.Node>[], opti
     }
   }
 
-  if (options.compatible && importMap.has('@vue/composition-api')) {
+  if (options.compatible) {
+    !importMap.has('vue') && importMap.set('vue', { named: new Set() })
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const temp = importMap.get('@vue/composition-api')!
+    const temp = importMap.get('vue')!
     temp.named.add('defineComponent')
-    importMap.set('@vue/composition-api', temp)
+    importMap.set('vue', temp)
   }
 
   return Array.from(importMap).map((el) => {
     const [key, clause] = el
     return tsModule.createImportDeclaration(
       undefined,
-      undefined,
       tsModule.createImportClause(
-        (clause.default) ? tsModule.createIdentifier(clause.default) : undefined,
+        false,  // TODO What is this
+        undefined,
         tsModule.createNamedImports([...clause.named]
           .map((named) => tsModule.createImportSpecifier(
+            false,
             undefined,
             tsModule.createIdentifier(named)
           ))

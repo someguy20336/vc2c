@@ -1,16 +1,14 @@
 import { ASTConverter, ASTResultKind, ReferenceKind } from '../types'
 import type ts from 'typescript'
-import { copySyntheticComments } from '../../utils'
+import { copySyntheticComments, getDecorator } from '../../utils'
 
 const injectDecoratorName = 'Inject'
 
 export const convertInject: ASTConverter<ts.PropertyDeclaration> = (node, options) => {
-  if (!node.decorators) {
-    return false
-  }
-  const decorator = node.decorators.find((el) => (el.expression as ts.CallExpression).expression.getText() === injectDecoratorName)
+
+  const tsModule = options.typescript;
+  const decorator = getDecorator(tsModule, node, injectDecoratorName);
   if (decorator) {
-    const tsModule = options.typescript
     const decoratorArguments = (decorator.expression as ts.CallExpression).arguments
     let injectKeyExpr: ts.Expression = tsModule.createStringLiteral(node.name.getText())
     let defaultValueExpr: ts.Expression | undefined
@@ -35,7 +33,7 @@ export const convertInject: ASTConverter<ts.PropertyDeclaration> = (node, option
       kind: ASTResultKind.COMPOSITION,
       imports: [{
         named: ['inject'],
-        external: (options.compatible) ? '@vue/composition-api' : 'vue'
+        external: 'vue'
       }],
       reference: ReferenceKind.VARIABLE,
       attributes: [node.name.getText()],

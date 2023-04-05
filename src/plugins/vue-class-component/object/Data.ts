@@ -8,7 +8,7 @@ export const convertObjData: ASTConverter<ts.MethodDeclaration> = (node, options
     if (!returnStatement || !returnStatement.expression) return false
     const attrutibes = (returnStatement.expression as ts.ObjectLiteralExpression).properties.map((el) => el.name?.getText() ?? '')
     const arrowFn = tsModule.createArrowFunction(
-      node.modifiers,
+      tsModule.getModifiers(node),
       [],
       [],
       undefined,
@@ -39,7 +39,7 @@ export const convertObjData: ASTConverter<ts.MethodDeclaration> = (node, options
       kind: ASTResultKind.COMPOSITION,
       imports: [{
         named: ['reactive', 'toRefs'],
-        external: (options.compatible) ? '@vue/composition-api' : 'vue'
+        external: 'vue'
       }],
       reference: ReferenceKind.VARIABLE_VALUE,
       attributes: attrutibes,

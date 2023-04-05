@@ -1,16 +1,14 @@
 import { ASTConverter, ASTResultKind, ReferenceKind } from '../types'
 import type ts from 'typescript'
-import { copySyntheticComments } from '../../utils'
+import { copySyntheticComments, getDecorator } from '../../utils'
 
 const modelDecoratorName = 'Model'
 
 export const convertModel: ASTConverter<ts.PropertyDeclaration> = (node, options) => {
-  if (!node.decorators) {
-    return false
-  }
-  const decorator = node.decorators.find((el) => (el.expression as ts.CallExpression).expression.getText() === modelDecoratorName)
+
+  const tsModule = options.typescript;
+  const decorator = getDecorator(tsModule, node, modelDecoratorName);
   if (decorator) {
-    const tsModule = options.typescript
     const decoratorArguments = (decorator.expression as ts.CallExpression).arguments
     if (decoratorArguments.length > 1) {
       const eventName = (decoratorArguments[0] as ts.StringLiteral).text
