@@ -4,6 +4,7 @@ import type ts from 'typescript'
 export const convertObjData: ASTConverter<ts.MethodDeclaration> = (node, options) => {
   if (node.name.getText() === 'data') {
     const tsModule = options.typescript
+    const factory = tsModule.factory;
     const returnStatement = node.body?.statements.find((el) => tsModule.isReturnStatement(el)) as ts.ReturnStatement | undefined
     if (!returnStatement || !returnStatement.expression) return false
     const attrutibes = (returnStatement.expression as ts.ObjectLiteralExpression).properties.map((el) => el.name?.getText() ?? '')
@@ -12,16 +13,16 @@ export const convertObjData: ASTConverter<ts.MethodDeclaration> = (node, options
       [],
       [],
       undefined,
-      tsModule.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
-      tsModule.createBlock(
+      factory.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
+      factory.createBlock(
         node.body?.statements.map((el) => {
           if (tsModule.isReturnStatement(el)) {
-            return tsModule.createReturn(
-              tsModule.createCall(
-                tsModule.createIdentifier('toRefs'),
+            return factory.createReturnStatement(
+              factory.createCallExpression(
+                factory.createIdentifier('toRefs'),
                 undefined,
-                [tsModule.createCall(
-                  tsModule.createIdentifier('reactive'),
+                [factory.createCallExpression(
+                  factory.createIdentifier('reactive'),
                   undefined,
                   returnStatement.expression ? [returnStatement.expression] : []
                 )]
@@ -44,21 +45,22 @@ export const convertObjData: ASTConverter<ts.MethodDeclaration> = (node, options
       reference: ReferenceKind.VARIABLE_VALUE,
       attributes: attrutibes,
       nodes: [
-        tsModule.createVariableStatement(
+        factory.createVariableStatement(
           undefined,
-          tsModule.createVariableDeclarationList(
-            [tsModule.createVariableDeclaration(
-              tsModule.createObjectBindingPattern(
-                attrutibes.map((el) => tsModule.createBindingElement(
+          factory.createVariableDeclarationList(
+            [factory.createVariableDeclaration(
+              factory.createObjectBindingPattern(
+                attrutibes.map((el) => factory.createBindingElement(
                   undefined,
                   undefined,
-                  tsModule.createIdentifier(el),
+                  factory.createIdentifier(el),
                   undefined
                 ))
               ),
               undefined,
-              tsModule.createCall(
-                tsModule.createParen(arrowFn),
+              undefined,
+              factory.createCallExpression(
+                factory.createParenthesizedExpression(arrowFn),
                 undefined,
                 []
               )

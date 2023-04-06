@@ -3,16 +3,17 @@ import type ts from 'typescript'
 import { copySyntheticComments } from '../../utils'
 
 export const convertMethod: ASTConverter<ts.MethodDeclaration> = (node, options) => {
-  const tsModule = options.typescript
+  const tsModule = options.typescript;
+  const factory = tsModule.factory;
   const methodName = node.name.getText()
 
-  const outputMethod = tsModule.createArrowFunction(
+  const outputMethod = factory.createArrowFunction(
     tsModule.getModifiers(node),
     node.typeParameters,
     node.parameters,
     node.type,
-    tsModule.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
-    node.body ?? tsModule.createBlock([])
+    factory.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
+    node.body ?? factory.createBlock([])
   )
 
   return {
@@ -24,11 +25,12 @@ export const convertMethod: ASTConverter<ts.MethodDeclaration> = (node, options)
     nodes: [
       copySyntheticComments(
         tsModule,
-        tsModule.createVariableStatement(
+        factory.createVariableStatement(
           undefined,
-          tsModule.createVariableDeclarationList([
-            tsModule.createVariableDeclaration(
-              tsModule.createIdentifier(methodName),
+          factory.createVariableDeclarationList([
+            factory.createVariableDeclaration(
+              factory.createIdentifier(methodName),
+              undefined,
               undefined,
               outputMethod
             )

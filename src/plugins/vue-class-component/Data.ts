@@ -6,7 +6,8 @@ export const convertData: ASTConverter<ts.PropertyDeclaration> = (node, options,
   if (!node.initializer) {
     return false
   }
-  const tsModule = options.typescript
+  const tsModule = options.typescript;
+  const factory = tsModule.factory;
   const dataName = node.name.getText()
 
   const checker = program.getTypeChecker()
@@ -15,13 +16,13 @@ export const convertData: ASTConverter<ts.PropertyDeclaration> = (node, options,
   const tag = (isRef) ? 'Data-ref' : 'Data-reactive'
   const named = (isRef) ? ['ref'] : ['reactive']
   const callExpr = (isRef)
-    ? tsModule.createCall(
-      tsModule.createIdentifier('ref'),
+    ? factory.createCallExpression(
+      factory.createIdentifier('ref'),
       undefined,
       [removeComments(tsModule, node.initializer)]
     )
-    : tsModule.createCall(
-      tsModule.createIdentifier('reactive'),
+    : factory.createCallExpression(
+      factory.createIdentifier('reactive'),
       undefined,
       [removeComments(tsModule, node.initializer)]
     )
@@ -38,11 +39,12 @@ export const convertData: ASTConverter<ts.PropertyDeclaration> = (node, options,
     nodes: [
       copySyntheticComments(
         tsModule,
-        tsModule.createVariableStatement(
+        factory.createVariableStatement(
           undefined,
-          tsModule.createVariableDeclarationList([
-            tsModule.createVariableDeclaration(
-              tsModule.createIdentifier(dataName),
+          factory.createVariableDeclarationList([
+            factory.createVariableDeclaration(
+              factory.createIdentifier(dataName),
+              undefined,
               undefined,
               callExpr
             )

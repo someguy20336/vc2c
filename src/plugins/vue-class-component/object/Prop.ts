@@ -14,7 +14,7 @@ export const convertObjProps: ASTConverter<ts.PropertyAssignment> = (node, optio
     const nodes = (tsModule.isArrayLiteralExpression(node.initializer))
       ? node.initializer.elements
         .filter(expr => expr.kind === tsModule.SyntaxKind.StringLiteral)
-        .map((el) => tsModule.createPropertyAssignment((el as ts.StringLiteral).text, tsModule.createNull()))
+        .map((el) => tsModule.factory.createPropertyAssignment((el as ts.StringLiteral).text, tsModule.factory.createNull()))
       : (node.initializer as ts.ObjectLiteralExpression).properties
         .map((el) => el as ts.PropertyAssignment)
 
