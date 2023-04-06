@@ -7,6 +7,7 @@ const propDecoratorName = 'Prop'
 export const convertProp: ASTConverter<ts.PropertyDeclaration> = (node, options) => {
 
   const tsModule = options.typescript;
+  const factory = tsModule.factory;
   const decorator = getDecorator(tsModule, node, propDecoratorName);
   if (decorator) {
     
@@ -24,8 +25,8 @@ export const convertProp: ASTConverter<ts.PropertyDeclaration> = (node, options)
         nodes: [
           copySyntheticComments(
             tsModule,
-            tsModule.createPropertyAssignment(
-              tsModule.createIdentifier(propName),
+            factory.createPropertyAssignment(
+              factory.createIdentifier(propName),
               propArguments
             ),
             node
@@ -39,6 +40,7 @@ export const convertProp: ASTConverter<ts.PropertyDeclaration> = (node, options)
 }
 export const mergeProps: ASTTransform = (astResults, options) => {
   const tsModule = options.typescript
+  const factory = tsModule.factory;
   const propTags = ['Prop', 'Model']
 
   const propASTResults = astResults.filter((el) => propTags.includes(el.tag))
@@ -52,9 +54,9 @@ export const mergeProps: ASTTransform = (astResults, options) => {
     reference: ReferenceKind.PROPS,
     attributes: propASTResults.map((el) => el.attributes).reduce((array, el) => array.concat(el), []),
     nodes: [
-      tsModule.createPropertyAssignment(
-        tsModule.createIdentifier('props'),
-        tsModule.createObjectLiteral(
+      factory.createPropertyAssignment(
+        factory.createIdentifier('props'),
+        factory.createObjectLiteralExpression(
           [
             ...propASTResults.map((el) => (el.tag === 'Prop') ? el.nodes : [el.nodes[1]])
               .reduce((array, el) => array.concat(el), [] as ts.ObjectLiteralElementLike[])

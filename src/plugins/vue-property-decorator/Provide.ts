@@ -7,10 +7,11 @@ const provideDecoratorName = 'Provide'
 export const convertProvide: ASTConverter<ts.PropertyDeclaration> = (node, options) => {
 
   const tsModule = options.typescript;
+  const factory = tsModule.factory;
   const decorator = getDecorator(tsModule, node, provideDecoratorName);
   if (decorator) {
     const decoratorArguments = (decorator.expression as ts.CallExpression).arguments
-    const provideKeyExpr: ts.Expression = (decoratorArguments.length > 0) ? decoratorArguments[0] : tsModule.createStringLiteral(node.name.getText())
+    const provideKeyExpr: ts.Expression = (decoratorArguments.length > 0) ? decoratorArguments[0] : factory.createStringLiteral(node.name.getText())
 
     return {
       tag: 'Provide',
@@ -24,8 +25,8 @@ export const convertProvide: ASTConverter<ts.PropertyDeclaration> = (node, optio
       nodes: [
         copySyntheticComments(
           tsModule,
-          tsModule.createExpressionStatement(tsModule.createCall(
-            tsModule.createIdentifier('provide'),
+          factory.createExpressionStatement(factory.createCallExpression(
+            factory.createIdentifier('provide'),
             undefined,
             [
               provideKeyExpr,

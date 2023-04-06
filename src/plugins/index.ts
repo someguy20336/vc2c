@@ -132,17 +132,17 @@ export function getASTResults (
 }
 
 export function convertASTResultToSetupFn (astResults: ASTResult<ts.Node>[], options: Vc2cOptions): ts.MethodDeclaration {
-  const tsModule = options.typescript.factory;
+  const factory = options.typescript.factory;
 
   const returnStatement = addTodoComment(
     options.typescript,   // TODO: what
-    tsModule.createReturnStatement(
-      tsModule.createObjectLiteralExpression([
+    factory.createReturnStatement(
+      factory.createObjectLiteralExpression([
         ...astResults
           .filter((el) => el.kind === ASTResultKind.COMPOSITION)
           .reduce((array, el) => array.concat(el.attributes), [] as string[])
-          .map((el) => tsModule.createShorthandPropertyAssignment(
-            tsModule.createIdentifier(el),
+          .map((el) => factory.createShorthandPropertyAssignment(
+            factory.createIdentifier(el),
             undefined
           ))
       ])
@@ -151,32 +151,32 @@ export function convertASTResultToSetupFn (astResults: ASTResult<ts.Node>[], opt
     false
   )
 
-  return tsModule.createMethodDeclaration(
+  return factory.createMethodDeclaration(
     undefined,
     undefined,
-    tsModule.createIdentifier('setup'),
+    factory.createIdentifier('setup'),
     undefined,
     undefined,
     [
-      tsModule.createParameterDeclaration(
+      factory.createParameterDeclaration(
         undefined,
         undefined,
-        tsModule.createIdentifier(options.setupPropsKey),
+        factory.createIdentifier(options.setupPropsKey),
         undefined,
         undefined,
         undefined
       ),
-      tsModule.createParameterDeclaration(
+      factory.createParameterDeclaration(
         undefined,
         undefined,
-        tsModule.createIdentifier(options.setupContextKey),
+        factory.createIdentifier(options.setupContextKey),
         undefined,
         undefined,
         undefined
       )
     ],
     undefined,
-    tsModule.createBlock(
+    factory.createBlock(
       [
         ...astResults
           .filter((el) => el.kind === ASTResultKind.COMPOSITION)
@@ -192,7 +192,7 @@ export function convertASTResultToSetupFn (astResults: ASTResult<ts.Node>[], opt
 export function convertASTResultToImport (astResults: ASTResult<ts.Node>[], options: Vc2cOptions): ts.ImportDeclaration[] {
   interface Clause { named: Set<string>, default?: string }
 
-  const tsModule = options.typescript.factory;
+  const factory = options.typescript.factory;
   const importMap = new Map<string, Clause>()
   for (const result of astResults) {
     for (const importInfo of result.imports) {
@@ -218,20 +218,20 @@ export function convertASTResultToImport (astResults: ASTResult<ts.Node>[], opti
 
   return Array.from(importMap).map((el) => {
     const [key, clause] = el
-    return tsModule.createImportDeclaration(
+    return factory.createImportDeclaration(
       undefined,
-      tsModule.createImportClause(
+      factory.createImportClause(
         false,  // TODO What is this
         undefined,
-        tsModule.createNamedImports([...clause.named]
-          .map((named) => tsModule.createImportSpecifier(
+        factory.createNamedImports([...clause.named]
+          .map((named) => factory.createImportSpecifier(
             false,
             undefined,
-            tsModule.createIdentifier(named)
+            factory.createIdentifier(named)
           ))
         )
       ),
-      tsModule.createStringLiteral(key)
+      factory.createStringLiteral(key)
     )
   })
 }
@@ -241,7 +241,8 @@ export function runPlugins (
   options: Vc2cOptions,
   program: ts.Program
 ): ts.Statement[] {
-  const tsModule = options.typescript
+  const tsModule = options.typescript;
+  const factory = tsModule.factory;
   log('Start Run ASTPlugins')
   const results = getASTResults(node, options, program)
   log('Finished ASTPlugins')
@@ -250,10 +251,10 @@ export function runPlugins (
   const setupFn = convertASTResultToSetupFn(results, options)
   log('Make default export object')
   const exportDefaultExpr = (options.compatible)
-    ? tsModule.createCall(
-      tsModule.createIdentifier('defineComponent'),
+    ? factory.createCallExpression(
+      factory.createIdentifier('defineComponent'),
       undefined,
-      [tsModule.createObjectLiteral(
+      [factory.createObjectLiteralExpression(
         [
           ...results
             .filter((el) => el.kind === ASTResultKind.OBJECT)
@@ -264,7 +265,7 @@ export function runPlugins (
         true
       )]
     )
-    : tsModule.createObjectLiteral(
+    : factory.createObjectLiteralExpression(
       [
         ...results
           .filter((el) => el.kind === ASTResultKind.OBJECT)

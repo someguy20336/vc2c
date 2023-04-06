@@ -7,6 +7,7 @@ const modelDecoratorName = 'Model'
 export const convertModel: ASTConverter<ts.PropertyDeclaration> = (node, options) => {
 
   const tsModule = options.typescript;
+  const factory = tsModule.factory;
   const decorator = getDecorator(tsModule, node, modelDecoratorName);
   if (decorator) {
     const decoratorArguments = (decorator.expression as ts.CallExpression).arguments
@@ -23,23 +24,23 @@ export const convertModel: ASTConverter<ts.PropertyDeclaration> = (node, options
         nodes: [
           copySyntheticComments(
             tsModule,
-            tsModule.createPropertyAssignment(
-              tsModule.createIdentifier('model'),
-              tsModule.createObjectLiteral(
-                [tsModule.createPropertyAssignment(
-                  tsModule.createIdentifier('prop'),
-                  tsModule.createStringLiteral(node.name.getText())
-                ), tsModule.createPropertyAssignment(
-                  tsModule.createIdentifier('event'),
-                  tsModule.createStringLiteral(eventName)
+            factory.createPropertyAssignment(
+              factory.createIdentifier('model'),
+              factory.createObjectLiteralExpression(
+                [factory.createPropertyAssignment(
+                  factory.createIdentifier('prop'),
+                  factory.createStringLiteral(node.name.getText())
+                ), factory.createPropertyAssignment(
+                  factory.createIdentifier('event'),
+                  factory.createStringLiteral(eventName)
                 )],
                 true
               )
             ),
             node
           ),
-          tsModule.createPropertyAssignment(
-            tsModule.createIdentifier(node.name.getText()),
+          factory.createPropertyAssignment(
+            factory.createIdentifier(node.name.getText()),
             propArguments
           )
         ] as ts.PropertyAssignment[]

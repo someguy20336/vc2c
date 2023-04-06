@@ -44,6 +44,7 @@ export const removeThisAndSort: ASTTransform = (astResults, options) => {
 
   let dependents: string[] = []
 
+  const factory = tsModule.factory;
   const transformer: () => ts.TransformerFactory<ts.Node> = () => {
     return (context) => {
       const removeThisVisitor: ts.Visitor = (node) => {
@@ -52,56 +53,56 @@ export const removeThisAndSort: ASTTransform = (astResults, options) => {
             const propertyName = node.name.getText()
             if (refVariables.includes(propertyName)) {
               dependents.push(propertyName)
-              return tsModule.createPropertyAccess(
-                tsModule.createIdentifier(propertyName),
-                tsModule.createIdentifier('value')
+              return factory.createPropertyAccessExpression(
+                factory.createIdentifier(propertyName),
+                factory.createIdentifier('value')
               )
             } else if (domeRefVariables.includes(propertyName)) {
               dependents.push(propertyName)
-              return tsModule.createNonNullExpression(
-                tsModule.createPropertyAccess(
-                  tsModule.createIdentifier(propertyName),
-                  tsModule.createIdentifier('value')
+              return factory.createNonNullExpression(
+                factory.createPropertyAccessExpression(
+                  factory.createIdentifier(propertyName),
+                  factory.createIdentifier('value')
                 )
               )
             } else if (propVariables.includes(propertyName)) {
               dependents.push(propertyName)
-              return tsModule.createPropertyAccess(
-                tsModule.createIdentifier(options.setupPropsKey),
-                tsModule.createIdentifier(propertyName)
+              return factory.createPropertyAccessExpression(
+                factory.createIdentifier(options.setupPropsKey),
+                factory.createIdentifier(propertyName)
               )
             } else if (variables.includes(propertyName)) {
               dependents.push(propertyName)
-              return tsModule.createIdentifier(propertyName)
+              return factory.createIdentifier(propertyName)
             } else {
               const convertKey = convertContextKey(propertyName)
               if (convertKey) {
-                return tsModule.createPropertyAccess(
-                  tsModule.createIdentifier(options.setupContextKey),
-                  tsModule.createIdentifier(convertKey)
+                return factory.createPropertyAccessExpression(
+                  factory.createIdentifier(options.setupContextKey),
+                  factory.createIdentifier(convertKey)
                 )
               }
 
               const apiKey = convertCompositionAPIKey(propertyName)
               if (apiKey) {
-                return tsModule.createIdentifier(apiKey)
+                return factory.createIdentifier(apiKey)
               }
 
               if (IVIEW.includes(propertyName)) {
-                return tsModule.createPropertyAccess(
-                  tsModule.createIdentifier('instance?.proxy?'),
-                  tsModule.createIdentifier(propertyName)
+                return factory.createPropertyAccessExpression(
+                  factory.createIdentifier('instance?.proxy?'),
+                  factory.createIdentifier(propertyName)
                 )
               }
 
               return addTodoComment(
                 tsModule,
-                tsModule.createPropertyAccess(
-                  tsModule.createPropertyAccess(
-                    tsModule.createIdentifier(options.setupContextKey),
-                    tsModule.createIdentifier('root')
+                factory.createPropertyAccessExpression(
+                  factory.createPropertyAccessExpression(
+                    factory.createIdentifier(options.setupContextKey),
+                    factory.createIdentifier('root')
                   ),
-                  tsModule.createIdentifier(propertyName)
+                  factory.createIdentifier(propertyName)
                 ),
                 'Check this convert result, it can work well in 80% case.',
                 true

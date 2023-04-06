@@ -7,6 +7,7 @@ const refDecoratorName = 'Ref'
 export const convertDomRef: ASTConverter<ts.PropertyDeclaration> = (node, options) => {
 
   const tsModule = options.typescript;
+  const factory = tsModule.factory;
   const decorator = getDecorator(tsModule, node, refDecoratorName);
   if (decorator) {
     const refName = node.name.getText()
@@ -23,16 +24,17 @@ export const convertDomRef: ASTConverter<ts.PropertyDeclaration> = (node, option
       nodes: [
         copySyntheticComments(
           tsModule,
-          tsModule.createVariableStatement(
+          factory.createVariableStatement(
             undefined,
-            tsModule.createVariableDeclarationList([
-              tsModule.createVariableDeclaration(
-                tsModule.createIdentifier(refName),
+            factory.createVariableDeclarationList([
+              factory.createVariableDeclaration(
+                factory.createIdentifier(refName),
                 undefined,
-                tsModule.createCall(
-                  tsModule.createIdentifier('ref'),
+                undefined,
+                factory.createCallExpression(
+                  factory.createIdentifier('ref'),
                   node.type ? [node.type] : [],
-                  [tsModule.createNull()]
+                  [factory.createNull()]
                 )
               )
             ],

@@ -111,7 +111,7 @@ export function copySyntheticComments<T extends ts.Node> (tsModule: typeof ts, n
 
 export function removeComments<T extends ts.Node> (tsModule: typeof ts, node: T): T | ts.StringLiteral {
   if (tsModule.isStringLiteral(node)) {
-    return tsModule.createStringLiteral(node.text)
+    return tsModule.factory.createStringLiteral(node.text)
   }
   return node
 }
@@ -139,7 +139,7 @@ export function convertNodeToASTResult<T extends ts.Node> (tsModule: typeof ts, 
 
 // ts.createIdentifier() cannot call getText function, it's a hack.
 export function createIdentifier (tsModule: typeof ts, text: string): ts.Identifier {
-  const temp = tsModule.createIdentifier(text)
+  const temp = tsModule.factory.createIdentifier(text)
   // eslint-disable-next-line @typescript-eslint/unbound-method
   temp.getText = () => text
   return temp

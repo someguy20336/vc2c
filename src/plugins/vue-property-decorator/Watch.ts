@@ -19,8 +19,8 @@ export const convertWatch: ASTConverter<ts.MethodDeclaration> = (node, options) 
         node.typeParameters,
         node.parameters,
         node.type,
-        tsModule.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
-        node.body ?? tsModule.createBlock([], false)
+        factory.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
+        node.body ?? factory.createBlock([], false)
       )
       const watchOptions: ts.PropertyAssignment[] = []
       if (watchArguments && tsModule.isObjectLiteralExpression(watchArguments)) {
@@ -31,15 +31,15 @@ export const convertWatch: ASTConverter<ts.MethodDeclaration> = (node, options) 
       }
 
       const watchFuncs: ts.Expression[] = [
-        tsModule.createPropertyAccess(
-          tsModule.createThis(),
+        factory.createPropertyAccessExpression(
+          factory.createThis(),
           createIdentifier(tsModule, keyName)
         ),
         method,
       ]
 
       if (watchOptions.length) {
-        watchFuncs.push(tsModule.createObjectLiteral(watchOptions))
+        watchFuncs.push(factory.createObjectLiteralExpression(watchOptions))
       }
 
       return {
@@ -52,11 +52,11 @@ export const convertWatch: ASTConverter<ts.MethodDeclaration> = (node, options) 
         reference: ReferenceKind.VARIABLE,
         attributes: [keyName],
         nodes: [
-          tsModule.createExpressionStatement(
+          factory.createExpressionStatement(
             copySyntheticComments(
               tsModule,
-              tsModule.createCall(
-                tsModule.createIdentifier('watch'),
+              factory.createCallExpression(
+                factory.createIdentifier('watch'),
                 undefined,
                 watchFuncs
               ),

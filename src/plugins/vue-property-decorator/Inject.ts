@@ -7,10 +7,11 @@ const injectDecoratorName = 'Inject'
 export const convertInject: ASTConverter<ts.PropertyDeclaration> = (node, options) => {
 
   const tsModule = options.typescript;
+  const factory = tsModule.factory;
   const decorator = getDecorator(tsModule, node, injectDecoratorName);
   if (decorator) {
     const decoratorArguments = (decorator.expression as ts.CallExpression).arguments
-    let injectKeyExpr: ts.Expression = tsModule.createStringLiteral(node.name.getText())
+    let injectKeyExpr: ts.Expression = factory.createStringLiteral(node.name.getText())
     let defaultValueExpr: ts.Expression | undefined
     if (decoratorArguments.length > 0) {
       const injectArgument = decoratorArguments[0]
@@ -40,16 +41,17 @@ export const convertInject: ASTConverter<ts.PropertyDeclaration> = (node, option
       nodes: [
         copySyntheticComments(
           tsModule,
-          tsModule.createVariableStatement(
+          factory.createVariableStatement(
             undefined,
-            tsModule.createVariableDeclarationList(
-              [tsModule.createVariableDeclaration(
-                tsModule.createIdentifier(node.name.getText()),
+            factory.createVariableDeclarationList(
+              [factory.createVariableDeclaration(
+                factory.createIdentifier(node.name.getText()),
                 undefined,
-                tsModule.createCall(
-                  tsModule.createIdentifier('inject'),
+                undefined,
+                factory.createCallExpression(
+                  factory.createIdentifier('inject'),
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  (node.type) ? [tsModule.createKeywordTypeNode(node.type.kind as any)] : undefined,
+                  (node.type) ? [factory.createKeywordTypeNode(node.type.kind as any)] : undefined,
                   [
                     injectKeyExpr,
                     ...(defaultValueExpr) ? [defaultValueExpr] : []

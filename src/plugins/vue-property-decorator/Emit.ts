@@ -11,6 +11,7 @@ const hyphenate = (str: string) => str.replace(hyphenateRE, '-$1').toLowerCase()
 export const convertEmitMethod: ASTConverter<ts.MethodDeclaration> = (node, options) => {
 
   const tsModule = options.typescript;
+  const factory = tsModule.factory;
   const decorator = getDecorator(tsModule, node, emitDecoratorName);
   if (decorator) {
     const methodName = node.name.getText()
@@ -18,19 +19,19 @@ export const convertEmitMethod: ASTConverter<ts.MethodDeclaration> = (node, opti
     const decoratorArguments = (decorator.expression as ts.CallExpression).arguments
     const eventName = decoratorArguments.length > 0 && tsModule.isStringLiteral(decoratorArguments[0]) ? (decoratorArguments[0] as ts.StringLiteral).text : undefined
 
-    const createEmit = (event: string, expressions: ts.Expression[]) => tsModule.createExpressionStatement(tsModule.createCall(
-      tsModule.createPropertyAccess(
-        tsModule.createIdentifier('context'),
-        tsModule.createIdentifier('emit')
+    const createEmit = (event: string, expressions: ts.Expression[]) => factory.createExpressionStatement(factory.createCallExpression(
+      factory.createPropertyAccessExpression(
+        factory.createIdentifier('context'),
+        factory.createIdentifier('emit')
       ),
       undefined,
       [
-        tsModule.createStringLiteral(hyphenate(methodName)),
+        factory.createStringLiteral(hyphenate(methodName)),
         ...expressions
       ]
     ))
 
-    const valueIdentifier = (node.parameters.length > 0) ? tsModule.createIdentifier(node.parameters[0].name.getText()) : undefined
+    const valueIdentifier = (node.parameters.length > 0) ? factory.createIdentifier(node.parameters[0].name.getText()) : undefined
 
     let haveResult = false
     const transformer: () => ts.TransformerFactory<ts.Statement> = () => {
@@ -47,7 +48,7 @@ export const convertEmitMethod: ASTConverter<ts.MethodDeclaration> = (node, opti
       }
     }
 
-    const originalBodyStatements = (node.body) ? node.body.statements : tsModule.createNodeArray([])
+    const originalBodyStatements = (node.body) ? node.body.statements : factory.createNodeArray([])
     let bodyStatements = tsModule.transform(
       originalBodyStatements.map((el) => el),
       [transformer()],
@@ -60,13 +61,13 @@ export const convertEmitMethod: ASTConverter<ts.MethodDeclaration> = (node, opti
       ]
     }
 
-    const outputMethod = tsModule.createArrowFunction(
+    const outputMethod = factory.createArrowFunction(
       tsModule.getModifiers(node),
       node.typeParameters,
       node.parameters,
       node.type,
-      tsModule.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
-      tsModule.createBlock(
+      factory.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
+      factory.createBlock(
         bodyStatements,
         true
       )
@@ -81,11 +82,12 @@ export const convertEmitMethod: ASTConverter<ts.MethodDeclaration> = (node, opti
       nodes: [
         copySyntheticComments(
           tsModule,
-          tsModule.createVariableStatement(
+          factory.createVariableStatement(
             undefined,
-            tsModule.createVariableDeclarationList([
-              tsModule.createVariableDeclaration(
-                tsModule.createIdentifier(methodName),
+            factory.createVariableDeclarationList([
+              factory.createVariableDeclaration(
+                factory.createIdentifier(methodName),
+                undefined,
                 undefined,
                 outputMethod
               )

@@ -8,7 +8,7 @@ export const convertObjData: ASTConverter<ts.MethodDeclaration> = (node, options
     const returnStatement = node.body?.statements.find((el) => tsModule.isReturnStatement(el)) as ts.ReturnStatement | undefined
     if (!returnStatement || !returnStatement.expression) return false
     const attrutibes = (returnStatement.expression as ts.ObjectLiteralExpression).properties.map((el) => el.name?.getText() ?? '')
-    const arrowFn = tsModule.createArrowFunction(
+    const arrowFn = factory.createArrowFunction(
       tsModule.getModifiers(node),
       [],
       [],
