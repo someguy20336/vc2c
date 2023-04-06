@@ -208,13 +208,11 @@ export function convertASTResultToImport (astResults: ASTResult<ts.Node>[], opti
     }
   }
 
-  if (options.compatible) {
-    !importMap.has('vue') && importMap.set('vue', { named: new Set() })
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const temp = importMap.get('vue')!
-    temp.named.add('defineComponent')
-    importMap.set('vue', temp)
-  }
+  !importMap.has('vue') && importMap.set('vue', { named: new Set() });
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const temp = importMap.get('vue')!;
+  temp.named.add('defineComponent');
+  importMap.set('vue', temp);
 
   return Array.from(importMap).map((el) => {
     const [key, clause] = el
@@ -250,8 +248,7 @@ export function runPlugins (
   log('Make setup function')
   const setupFn = convertASTResultToSetupFn(results, options)
   log('Make default export object')
-  const exportDefaultExpr = (options.compatible)
-    ? factory.createCallExpression(
+  const exportDefaultExpr = factory.createCallExpression(
       factory.createIdentifier('defineComponent'),
       undefined,
       [factory.createObjectLiteralExpression(
@@ -264,17 +261,7 @@ export function runPlugins (
         ],
         true
       )]
-    )
-    : factory.createObjectLiteralExpression(
-      [
-        ...results
-          .filter((el) => el.kind === ASTResultKind.OBJECT)
-          .map((el) => el.nodes)
-          .reduce((array, el) => array.concat(el), []) as ts.PropertyAssignment[],
-        setupFn
-      ],
-      true
-    )
+    );
 
   const exportAssignment = copySyntheticComments(
     tsModule,

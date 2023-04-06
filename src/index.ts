@@ -24,7 +24,7 @@ export function convertFile (filePath: string, root: string, config: string): { 
   if (config.endsWith('.ts')) {
     require('ts-node/register')
   }
-  const inputOptions: InputVc2cOptions = existsFileSync(path.resolve(root, config))
+  const inputOptions: InputVc2cOptions = config && existsFileSync(path.resolve(root, config))
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     ? require(path.resolve(root, config)) as InputVc2cOptions
     : {}
