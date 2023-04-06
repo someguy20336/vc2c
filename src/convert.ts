@@ -35,7 +35,7 @@ export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, pro
   const otherStatements = sourceFile.statements
     .map((el) => el)
     .filter((el) =>
-      !((tsModule.isClassDeclaration(el) && getDecoratorNames(tsModule, el).includes('Options')) ||
+      !((tsModule.isClassDeclaration(el) && getDecoratorNames(tsModule, el).includes('Component')) ||
       (tsModule.isImportDeclaration(el) && vueClassModules.includes((el.moduleSpecifier as ts.StringLiteral).text)) ||
       (tsModule.isImportDeclaration(el) && (el.moduleSpecifier as ts.StringLiteral).text === 'vue'))
     )
@@ -52,7 +52,7 @@ export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, pro
 
   log('output result code')
   const printer = tsModule.createPrinter()
-  const result = printer.printFile(tsModule.updateSourceFileNode(sourceFile, resultStatements))
+  const result = printer.printFile(tsModule.factory.updateSourceFile(sourceFile, resultStatements))
 
   return result
 }

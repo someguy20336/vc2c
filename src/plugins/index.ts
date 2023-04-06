@@ -277,8 +277,7 @@ export function runPlugins (
 
   const exportAssignment = copySyntheticComments(
     tsModule,
-    tsModule.createExportAssignment(
-      undefined,
+    tsModule.factory.createExportAssignment(
       undefined,
       undefined,
       exportDefaultExpr
