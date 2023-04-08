@@ -8,24 +8,15 @@ export function parseVueFile (vueTemplateParserModule: typeof vueTemplateParser,
   return vueTemplateParserModule.parseComponent(content)
 }
 
-export function getNodeFromExportNode (tsModule: typeof ts, exportExpr: ts.Node): ts.ClassDeclaration | undefined {
-  switch (exportExpr.kind) {
-    case tsModule.SyntaxKind.ClassDeclaration:
-      return exportExpr as ts.ClassDeclaration
-  }
-  return undefined
-}
-
-export function getDefaultExportNode (tsModule: typeof ts, sourceFile: ts.SourceFile): ts.ClassDeclaration | undefined {
+export function getClassDeclarationNodes (tsModule: typeof ts, sourceFile: ts.SourceFile): ts.ClassDeclaration[] | undefined {
   const exportStmts = sourceFile.statements.filter(
     st => st.kind === tsModule.SyntaxKind.ClassDeclaration
   )
   if (exportStmts.length === 0) {
     return undefined
   }
-  const exportNode = (exportStmts[0] as ts.ClassDeclaration)
 
-  return getNodeFromExportNode(tsModule, exportNode)
+  return exportStmts as ts.ClassDeclaration[];
 }
 
 export function getDecorator(tsModule: typeof ts, node: ts.Node, decName: string): ts.Decorator | undefined {

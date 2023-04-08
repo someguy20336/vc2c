@@ -1,5 +1,5 @@
 import type ts from 'typescript'
-import { getDecoratorNames, getDefaultExportNode } from './utils'
+import { getDecoratorNames, getClassDeclarationNodes } from './utils'
 import { runPlugins } from './plugins'
 import { Vc2cOptions } from './options'
 import { log } from './debug'
@@ -27,10 +27,6 @@ export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, pro
   }
 
   log('check default export class')
-  const defaultExportNode = getDefaultExportNode(options.typescript, sourceFile)
-  if (!defaultExportNode) {
-    throw new Error('no default export class')
-  }
 
   const otherStatements = sourceFile.statements
     .map((el) => el)
@@ -40,10 +36,16 @@ export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, pro
       (tsModule.isImportDeclaration(el) && (el.moduleSpecifier as ts.StringLiteral).text === 'vue'))
     )
 
-  let resultStatements = [
-    ...otherStatements,
-    ...runPlugins(defaultExportNode, options, program)
-  ]
+  let resultStatements = otherStatements;
+
+  const classNodes = getClassDeclarationNodes(options.typescript, sourceFile)
+  if (!classNodes) {
+    throw new Error('no class components found')
+  }
+
+  for (let cNode of classNodes) {
+    resultStatements = [...resultStatements, ...runPlugins(cNode, options, program)];
+  }
 
   resultStatements = [
     ...resultStatements.filter((el) => tsModule.isImportDeclaration(el)),

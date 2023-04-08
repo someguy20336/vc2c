@@ -248,7 +248,7 @@ export function runPlugins (
   log('Make setup function')
   const setupFn = convertASTResultToSetupFn(results, options)
   log('Make default export object')
-  const exportDefaultExpr = factory.createCallExpression(
+  const defineComponentExpr = factory.createCallExpression(
       factory.createIdentifier('defineComponent'),
       undefined,
       [factory.createObjectLiteralExpression(
@@ -263,15 +263,37 @@ export function runPlugins (
       )]
     );
 
+  // Select which one based on the modifier of the class
+  // Export default
+  let exportExpr: ts.Statement;
+  if (tsModule.getModifiers(node)?.some(m => m.kind === tsModule.SyntaxKind.DefaultKeyword)) {
+    // export default ...
+    exportExpr = tsModule.factory.createExportAssignment(
+      undefined,
+      undefined,
+      defineComponentExpr
+    );
+  } else {
+    // export const <name> ...
+    exportExpr = factory.createVariableStatement(
+      [factory.createToken(tsModule.SyntaxKind.ExportKeyword)],
+      factory.createVariableDeclarationList(
+        [factory.createVariableDeclaration(
+          factory.createIdentifier(node.name!.getText()),
+          undefined,
+          undefined,
+          defineComponentExpr
+        )],
+        tsModule.NodeFlags.Const
+      )
+    );
+  }
+  
   const exportAssignment = copySyntheticComments(
     tsModule,
-    tsModule.factory.createExportAssignment(
-      undefined,
-      undefined,
-      exportDefaultExpr
-    ),
+    exportExpr,
     node
-  )
+  );
 
   log('Make ImportDeclaration')
   const importDeclaration = convertASTResultToImport(results, options)

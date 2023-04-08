@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`testTSFile compatible 1`] = `
+exports[`testTSFile converts a file with a single default component 1`] = `
 "import {
   computed,
   reactive,
@@ -122,6 +122,79 @@ export default defineComponent({
       removeItem,
       hello
     }
+  }
+})
+"
+`;
+
+exports[`testTSFile converts a file with multiple components 1`] = `
+"import { defineComponent } from 'vue'
+import { defineComponent } from 'vue'
+import { defineComponent } from 'vue'
+
+/**
+ * My basic tag
+ */
+export const BasicPropertyClass = defineComponent({
+  props: {
+    /**
+     * My foo
+     */
+    foo: { type: Number, default: false }
+  },
+  name: 'BasicPropertyClass',
+  setup(props, context) {
+    /**
+     * My greeting
+     */
+    const hello = () => {
+      console.log('eh')
+    }
+
+    // TODO: Please remove unused return variable
+    return { hello }
+  }
+})
+
+export const AnotherComponent = defineComponent({
+  props: {
+    /**
+     * My foo
+     */
+    foo: { type: Number, default: false }
+  },
+  name: 'AnotherComponent',
+  setup(props, context) {
+    /**
+     * My greeting
+     */
+    const hello2 = () => {
+      console.log('eh')
+    }
+
+    // TODO: Please remove unused return variable
+    return { hello2 }
+  }
+})
+
+export const AThirdComponent = defineComponent({
+  props: {
+    /**
+     * My foo
+     */
+    foo: { type: Number, default: false }
+  },
+  name: 'AThirdComponent',
+  setup(props, context) {
+    /**
+     * My greeting
+     */
+    const hello3 = () => {
+      console.log('eh')
+    }
+
+    // TODO: Please remove unused return variable
+    return { hello3 }
   }
 })
 "
