@@ -19,7 +19,7 @@ describe('testTSFile', () => {
     expect(file.kind).toBe(FileKind.TS)
     expect(file).not.toHaveProperty('start')
     expect(file).not.toHaveProperty('end')
-    expect(result).toMatchSnapshot()
+    expect(result.convertedContent).toMatchSnapshot()
   });
 
   it('converts a file with multiple components', () => {
@@ -29,7 +29,7 @@ describe('testTSFile', () => {
     expect(file.kind).toBe(FileKind.TS)
     expect(file).not.toHaveProperty('start')
     expect(file).not.toHaveProperty('end')
-    expect(result).toMatchSnapshot()
+    expect(result.convertedContent).toMatchSnapshot()
   });
 
   it('converts a file with multiple components and one default', () => {
@@ -39,7 +39,7 @@ describe('testTSFile', () => {
     expect(file.kind).toBe(FileKind.TS)
     expect(file).not.toHaveProperty('start')
     expect(file).not.toHaveProperty('end')
-    expect(result).toMatchSnapshot()
+    expect(result.convertedContent).toMatchSnapshot()
   });
 
   it('converts a file with a component and non-component class', () => {
@@ -49,6 +49,6 @@ describe('testTSFile', () => {
     expect(file.kind).toBe(FileKind.TS)
     expect(file).not.toHaveProperty('start')
     expect(file).not.toHaveProperty('end')
-    expect(result).toMatchSnapshot()
+    expect(result.convertedContent).toMatchSnapshot()
   });
 })

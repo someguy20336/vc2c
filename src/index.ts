@@ -6,15 +6,21 @@ import path from 'path'
 import { readVueSFCOrTsFile, existsFileSync, FileInfo } from './file'
 import { setDebugMode } from './debug'
 import * as BuiltInPlugins from './plugins/builtIn'
+import { ConvertResult } from './plugins/types'
 
-export function convert (content: string, inputOptions: InputVc2cOptions): string {
+export function convert (content: string, inputOptions: InputVc2cOptions): ConvertResult {
   const options = mergeVc2cOptions(getDefaultVc2cOptions(inputOptions.typescript), inputOptions)
   const { ast, program } = getSingleFileProgram(content, options)
 
-  return format(convertAST(ast, options, program), options)
+  const convResult = convertAST(ast, options, program);
+  if (convResult.success) {
+    convResult.convertedContent = format(convResult.convertedContent, options);
+  }
+
+  return convResult;
 }
 
-export function convertFile (filePath: string, root: string, config: string): { file: FileInfo, result: string } {
+export function convertFile (filePath: string, root: string, config: string): { file: FileInfo, result: ConvertResult } {
   root = (typeof root === 'string')
     ? (
       path.isAbsolute(root) ? root : path.resolve(process.cwd(), root)

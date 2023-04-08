@@ -3,14 +3,14 @@ import { getClassDeclarationNodes, hasComponentDecorator } from './utils'
 import { convertASTResultToImport, runPlugins } from './plugins'
 import { Vc2cOptions } from './options'
 import { log } from './debug'
-import { ASTResult } from './plugins/types'
+import { ASTResult, ConvertResult } from './plugins/types'
 
 const vueClassModules = [
   'vue-class-component',
   'vue-property-decorator'
 ]
 
-export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, program: ts.Program): string {
+export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, program: ts.Program): ConvertResult {
   const tsModule = options.typescript
 
   log('check vue class library')
@@ -24,7 +24,11 @@ export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, pro
       return false
     })
   if (!vueClassModuleImportStatement) {
-    throw new Error('no vue class library in this file.')
+    return {
+      success: false,
+      convertedContent: "",
+      error: "No vue class library in this file"
+    }
   }
 
   log('check default export class')
@@ -41,7 +45,11 @@ export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, pro
 
   const classNodes = getClassDeclarationNodes(options.typescript, sourceFile)
   if (!classNodes) {
-    throw new Error('no class components found')
+    return {
+      success: false,
+      convertedContent: "",
+      error: "No vue class components found in this file"
+    }
   }
 
   let astResults: ASTResult<ts.Node>[] = [];
@@ -64,5 +72,9 @@ export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, pro
   const printer = tsModule.createPrinter()
   const result = printer.printFile(tsModule.factory.updateSourceFile(sourceFile, resultStatements))
 
-  return result
+  return {
+    success: true,
+    convertedContent: result,
+    error: ""
+  };
 }

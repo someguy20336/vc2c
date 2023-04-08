@@ -67,3 +67,9 @@ export interface RunPluginResult {
   astResults: ASTResult<ts.Node>[];
   statement: ts.Statement;
 }
+
+export interface ConvertResult { 
+  success: boolean; 
+  convertedContent: string; 
+  error: string;
+}

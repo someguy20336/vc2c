@@ -26,7 +26,7 @@ program
   .usage('<command> [options]')
 
 program
-  .command('single <filePath>')
+  .command('convert <filePath>')
   .description('convert vue component file from class to composition api')
   .option('-v, --view', 'Output file content on stdout, and no write file.')
   .option('-r, --root <root>', 'Set root path for calc file absolute path. Default:`process.cwd()`')
@@ -34,16 +34,23 @@ program
   // eslint-disable-next-line @typescript-eslint/no-misused-promises
   .action(async (filePath: string, cmd) => {
     const cmdOptions = getCmdOptions(cmd)
-    const targetFiles = glob.sync(filePath.includes('.vue') ? filePath : `${filePath}**/*.vue`)
+    const targetFiles = glob.sync(filePath)
 
     targetFiles.forEach((targetFile) => {
       const { file, result } = convertFile(targetFile, cmdOptions.root as string, cmdOptions.config as string)
+
+      if (!result.success) {
+        console.log("Skipping file: " + targetFile);
+        console.log(result.error);
+        return;
+      }
+
       if (cmdOptions.view) {
         console.log(result)
         return
       }
 
-      writeFileInfo(file, result)
+      writeFileInfo(file, result.convertedContent)
       console.log('Please check the TODO comments on result.')
     })
   })
