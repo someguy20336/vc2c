@@ -1,5 +1,39 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`testTSFile converts a file with a component and non-component class 1`] = `
+"import { defineComponent } from 'vue'
+
+export class NonComponent {
+  public testOne: string = '1'
+  public testTwo: number = 2
+}
+
+/**
+ * My basic tag
+ */
+export const BasicPropertyClass = defineComponent({
+  props: {
+    /**
+     * My foo
+     */
+    foo: { type: Number, default: false }
+  },
+  name: 'BasicPropertyClass',
+  setup(props, context) {
+    /**
+     * My greeting
+     */
+    const hello = () => {
+      console.log('eh')
+    }
+
+    // TODO: Please remove unused return variable
+    return { hello }
+  }
+})
+"
+`;
+
 exports[`testTSFile converts a file with a single default component 1`] = `
 "import {
   computed,
@@ -129,8 +163,6 @@ export default defineComponent({
 
 exports[`testTSFile converts a file with multiple components 1`] = `
 "import { defineComponent } from 'vue'
-import { defineComponent } from 'vue'
-import { defineComponent } from 'vue'
 
 /**
  * My basic tag
@@ -185,6 +217,77 @@ export const AThirdComponent = defineComponent({
     foo: { type: Number, default: false }
   },
   name: 'AThirdComponent',
+  setup(props, context) {
+    /**
+     * My greeting
+     */
+    const hello3 = () => {
+      console.log('eh')
+    }
+
+    // TODO: Please remove unused return variable
+    return { hello3 }
+  }
+})
+"
+`;
+
+exports[`testTSFile converts a file with multiple components and one default 1`] = `
+"import { defineComponent } from 'vue'
+
+/**
+ * My basic tag
+ */
+export const BasicPropertyClass = defineComponent({
+  props: {
+    /**
+     * My foo
+     */
+    foo: { type: Number, default: false }
+  },
+  name: 'BasicPropertyClass',
+  setup(props, context) {
+    /**
+     * My greeting
+     */
+    const hello = () => {
+      console.log('eh')
+    }
+
+    // TODO: Please remove unused return variable
+    return { hello }
+  }
+})
+
+export const AnotherComponent = defineComponent({
+  props: {
+    /**
+     * My foo
+     */
+    foo: { type: Number, default: false }
+  },
+  name: 'AnotherComponent',
+  setup(props, context) {
+    /**
+     * My greeting
+     */
+    const hello2 = () => {
+      console.log('eh')
+    }
+
+    // TODO: Please remove unused return variable
+    return { hello2 }
+  }
+})
+
+export default defineComponent({
+  props: {
+    /**
+     * My foo
+     */
+    foo: { type: Number, default: false }
+  },
+  name: 'AThirdDefaultComponent',
   setup(props, context) {
     /**
      * My greeting

@@ -1,6 +1,6 @@
 import type ts from 'typescript'
 import { Vc2cOptions } from '../options'
-import { ASTConvertPlugins, ASTResult, ASTConverter, ASTResultKind } from './types'
+import { ASTConvertPlugins, ASTResult, ASTConverter, ASTResultKind, RunPluginResult } from './types'
 import { copySyntheticComments, addTodoComment, convertNodeToASTResult } from '../utils'
 import { log } from '../debug'
 import { convertObjName } from './vue-class-component/object/ComponentName'
@@ -211,8 +211,10 @@ export function convertASTResultToImport (astResults: ASTResult<ts.Node>[], opti
   !importMap.has('vue') && importMap.set('vue', { named: new Set() });
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const temp = importMap.get('vue')!;
-  temp.named.add('defineComponent');
-  importMap.set('vue', temp);
+  if (!temp.named.has("defineComponent")) {
+    temp.named.add('defineComponent');
+    importMap.set('vue', temp);
+  }
 
   return Array.from(importMap).map((el) => {
     const [key, clause] = el
@@ -238,7 +240,7 @@ export function runPlugins (
   node: ts.ClassDeclaration,
   options: Vc2cOptions,
   program: ts.Program
-): ts.Statement[] {
+): RunPluginResult {
   const tsModule = options.typescript;
   const factory = tsModule.factory;
   log('Start Run ASTPlugins')
@@ -295,11 +297,8 @@ export function runPlugins (
     node
   );
 
-  log('Make ImportDeclaration')
-  const importDeclaration = convertASTResultToImport(results, options)
-
-  return [
-    ...importDeclaration,
-    exportAssignment
-  ]
+  return {
+    astResults: results,
+    statement: exportAssignment
+  };
 }

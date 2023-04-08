@@ -9,6 +9,8 @@ const execAsync = util.promisify(exec)
 describe('testTSFile', () => {
   const defComponentPath = 'fixture/Input.ts';
   const multComponentPath = "fixture/MultipleComponents.ts";
+  const multComponentDefaultPath = "fixture/MultipleComponentsWithDefault.ts";
+  const componentAndNonCompPath = "fixture/ComponentWithNonComponentClass.ts";
 
   it('converts a file with a single default component', () => {
     const { file, result } = convertFile(defComponentPath, __dirname, '')
@@ -23,6 +25,26 @@ describe('testTSFile', () => {
   it('converts a file with multiple components', () => {
     const { file, result } = convertFile(multComponentPath, __dirname, '')
     expect(file.fsPath.includes(path.basename(multComponentPath))).toBeTruthy()
+    expect(path.isAbsolute(file.fsPath)).toBeTruthy()
+    expect(file.kind).toBe(FileKind.TS)
+    expect(file).not.toHaveProperty('start')
+    expect(file).not.toHaveProperty('end')
+    expect(result).toMatchSnapshot()
+  });
+
+  it('converts a file with multiple components and one default', () => {
+    const { file, result } = convertFile(multComponentDefaultPath, __dirname, '')
+    expect(file.fsPath.includes(path.basename(multComponentDefaultPath))).toBeTruthy()
+    expect(path.isAbsolute(file.fsPath)).toBeTruthy()
+    expect(file.kind).toBe(FileKind.TS)
+    expect(file).not.toHaveProperty('start')
+    expect(file).not.toHaveProperty('end')
+    expect(result).toMatchSnapshot()
+  });
+
+  it('converts a file with a component and non-component class', () => {
+    const { file, result } = convertFile(componentAndNonCompPath, __dirname, '')
+    expect(file.fsPath.includes(path.basename(componentAndNonCompPath))).toBeTruthy()
     expect(path.isAbsolute(file.fsPath)).toBeTruthy()
     expect(file.kind).toBe(FileKind.TS)
     expect(file).not.toHaveProperty('start')

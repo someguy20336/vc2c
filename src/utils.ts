@@ -10,7 +10,7 @@ export function parseVueFile (vueTemplateParserModule: typeof vueTemplateParser,
 
 export function getClassDeclarationNodes (tsModule: typeof ts, sourceFile: ts.SourceFile): ts.ClassDeclaration[] | undefined {
   const exportStmts = sourceFile.statements.filter(
-    st => st.kind === tsModule.SyntaxKind.ClassDeclaration
+    st => tsModule.isClassDeclaration(st) && hasComponentDecorator(tsModule, st)
   )
   if (exportStmts.length === 0) {
     return undefined
@@ -32,6 +32,10 @@ export function getDecoratorNames (tsModule: typeof ts, node: ts.Node): string[]
         return el.expression.getText()
       }
     });
+}
+
+export function hasComponentDecorator(tsModule: typeof ts, node: ts.ClassDeclaration): boolean {
+  return getDecoratorNames(tsModule, node).includes('Component');
 }
 
 export function getDecorators(tsModule: typeof ts, node: ts.Node): readonly ts.Decorator[] {

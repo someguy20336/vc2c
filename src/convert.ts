@@ -1,8 +1,9 @@
 import type ts from 'typescript'
-import { getDecoratorNames, getClassDeclarationNodes } from './utils'
-import { runPlugins } from './plugins'
+import { getClassDeclarationNodes, hasComponentDecorator } from './utils'
+import { convertASTResultToImport, runPlugins } from './plugins'
 import { Vc2cOptions } from './options'
 import { log } from './debug'
+import { ASTResult } from './plugins/types'
 
 const vueClassModules = [
   'vue-class-component',
@@ -31,7 +32,7 @@ export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, pro
   const otherStatements = sourceFile.statements
     .map((el) => el)
     .filter((el) =>
-      !((tsModule.isClassDeclaration(el) && getDecoratorNames(tsModule, el).includes('Component')) ||
+      !((tsModule.isClassDeclaration(el) && hasComponentDecorator(tsModule, el)) ||
       (tsModule.isImportDeclaration(el) && vueClassModules.includes((el.moduleSpecifier as ts.StringLiteral).text)) ||
       (tsModule.isImportDeclaration(el) && (el.moduleSpecifier as ts.StringLiteral).text === 'vue'))
     )
@@ -43,9 +44,16 @@ export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, pro
     throw new Error('no class components found')
   }
 
+  let astResults: ASTResult<ts.Node>[] = [];
+
   for (let cNode of classNodes) {
-    resultStatements = [...resultStatements, ...runPlugins(cNode, options, program)];
+    const result = runPlugins(cNode, options, program);
+    astResults = astResults.concat(result.astResults);
+    resultStatements.push(result.statement);
   }
+  
+  log('Make ImportDeclaration')
+  resultStatements = resultStatements.concat(convertASTResultToImport(astResults, options));
 
   resultStatements = [
     ...resultStatements.filter((el) => tsModule.isImportDeclaration(el)),
