@@ -46,7 +46,7 @@ program
       }
 
       if (cmdOptions.view) {
-        console.log(result)
+        console.log(result.convertedContent)
         return
       }
 
