@@ -26,7 +26,7 @@ export default class BasicPropertyClass extends Vue {
   /**
    * Computed
    */
-  public get computedGetterOnly () {
+  public get computedGetterOnly (): number {
     return this.aProperty + 1;
   }
 
@@ -39,7 +39,7 @@ export default class BasicPropertyClass extends Vue {
   }
 
   @Watch('computedGetterOnly', { deep: true, immediate: true })
-  onCheckedChanged (val: string, newVal: string) {
+  onCheckedChanged (val: number, newVal: number) {
     console.log(val, newVal)
   }
 

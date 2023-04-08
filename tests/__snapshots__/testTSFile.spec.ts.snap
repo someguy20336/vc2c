@@ -117,7 +117,7 @@ export default defineComponent({
       },
       { deep: true, immediate: true }
     )
-    watch(msg.value, (val: string, newVal: string) => {
+    watch(msg, (val: string, newVal: string) => {
       console.log(val, newVal)
     })
     onMounted(() => {

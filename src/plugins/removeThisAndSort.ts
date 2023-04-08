@@ -46,24 +46,34 @@ export const removeThisAndSort: ASTTransform = (astResults, options) => {
 
   const factory = tsModule.factory;
   const transformer: () => ts.TransformerFactory<ts.Node> = () => {
+    let noValue: boolean = false;
+
+    const transformProperty = (propertyName: string): ts.Expression => {
+      // Watch args should not use ".value"      
+      dependents.push(propertyName);
+      if  (noValue) {
+        noValue = false;
+        return factory.createIdentifier(propertyName);
+      }
+      return factory.createPropertyAccessExpression(
+        factory.createIdentifier(propertyName),
+        factory.createIdentifier('value')
+      )
+    }
+
     return (context) => {
       const removeThisVisitor: ts.Visitor = (node) => {
         if (tsModule.isPropertyAccessExpression(node)) {
           if (node.expression.kind === tsModule.SyntaxKind.ThisKeyword) {
-            const propertyName = node.name.getText()
+            const propertyName = node.name.getText();
+
             if (refVariables.includes(propertyName)) {
               dependents.push(propertyName)
-              return factory.createPropertyAccessExpression(
-                factory.createIdentifier(propertyName),
-                factory.createIdentifier('value')
-              )
+              return transformProperty(propertyName);
             } else if (domeRefVariables.includes(propertyName)) {
               dependents.push(propertyName)
               return factory.createNonNullExpression(
-                factory.createPropertyAccessExpression(
-                  factory.createIdentifier(propertyName),
-                  factory.createIdentifier('value')
-                )
+                transformProperty(propertyName)
               )
             } else if (propVariables.includes(propertyName)) {
               dependents.push(propertyName)
@@ -110,6 +120,18 @@ export const removeThisAndSort: ASTTransform = (astResults, options) => {
             }
           }
           return tsModule.visitEachChild(node, removeThisVisitor, context)
+        } else if (tsModule.isCallExpression(node) && tsModule.isIdentifier(node.expression) && node.expression.text === "watch") {
+          
+          noValue = true;
+          return factory.createCallExpression(
+            node.expression,
+            undefined,
+            node.arguments.map(exp => {              
+              const newNode = tsModule.visitNode(exp, removeThisVisitor);
+              noValue = false;
+              return newNode;
+            })
+          );
         }
         return tsModule.visitEachChild(node, removeThisVisitor, context)
       }
