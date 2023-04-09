@@ -64,6 +64,16 @@ export function isInternalHook (methodName: string): boolean {
   return $internalHooks.has(methodName)
 }
 
+export function isNewInternalHook(name: string): boolean {
+  for (let hook of $internalHooks.values()) {
+    if (hook === name) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
 export function getMappedHook (methodName: string): string | undefined | false {
   return $internalHooks.get(methodName)
 }

@@ -1,7 +1,7 @@
 import type ts from 'typescript'
 import { Vc2cOptions } from '../options'
 import { ASTConvertPlugins, ASTResult, ASTConverter, ASTResultKind, RunPluginResult } from './types'
-import { copySyntheticComments, addTodoComment, convertNodeToASTResult } from '../utils'
+import { copySyntheticComments, addTodoComment, convertNodeToASTResult, isNewInternalHook } from '../utils'
 import { log } from '../debug'
 import { convertObjName } from './vue-class-component/object/ComponentName'
 import { convertObjProps } from './vue-class-component/object/Prop'
@@ -143,7 +143,8 @@ export function convertASTResultToSetupFn (astResults: ASTResult<ts.Node>[], opt
           .filter((el) => el.kind === ASTResultKind.COMPOSITION)
           .reduce((array, el) => {
             for (let attr of el.attributes) {
-              if (!array.includes(attr)) {
+              // De-duplicate and remove internal hooks
+              if (!array.includes(attr) && !isNewInternalHook(attr)) {
                 array.push(attr);
               }
             }
