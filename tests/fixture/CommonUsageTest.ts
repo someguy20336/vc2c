@@ -39,13 +39,13 @@ export default class BasicPropertyClass extends Vue {
   }
 
   @Watch('computedGetterOnly', { deep: true, immediate: true })
-  onCheckedChanged (val: number, newVal: number) {
-    console.log(val, newVal)
+  onCheckedChanged (val: number, oldVal: number | undefined) {
+    console.log(val, oldVal)
   }
 
   @Watch('msg')
-  onMsgChanged (val: string, newVal: string) {
-    console.log(val, newVal)
+  onMsgChanged (val: string, oldVal: string) {
+    console.log(val, oldVal)
   }
 
   mounted () {

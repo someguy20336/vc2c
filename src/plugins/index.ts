@@ -133,14 +133,23 @@ export function getASTResults (
 
 export function convertASTResultToSetupFn (astResults: ASTResult<ts.Node>[], options: Vc2cOptions): ts.MethodDeclaration {
   const factory = options.typescript.factory;
-
+  const retVars: Set<string> = new Set<string>();
+  
   const returnStatement = addTodoComment(
-    options.typescript,   // TODO: what
+    options.typescript,
     factory.createReturnStatement(
       factory.createObjectLiteralExpression([
         ...astResults
           .filter((el) => el.kind === ASTResultKind.COMPOSITION)
-          .reduce((array, el) => array.concat(el.attributes), [] as string[])
+          .reduce((array, el) => {
+            for (let attr of el.attributes) {
+              if (!array.includes(attr)) {
+                array.push(attr);
+              }
+            }
+            
+            return array;
+          }, [] as string[])
           .map((el) => factory.createShorthandPropertyAssignment(
             factory.createIdentifier(el),
             undefined

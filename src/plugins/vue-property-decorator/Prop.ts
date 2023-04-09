@@ -12,27 +12,26 @@ export const convertProp: ASTConverter<ts.PropertyDeclaration> = (node, options)
   if (decorator) {
     
     const decoratorArguments = (decorator.expression as ts.CallExpression).arguments
-    if (decoratorArguments.length > 0) {
-      const propName = node.name.getText()
-      const propArguments = decoratorArguments[0]
 
-      return {
-        tag: 'Prop',
-        kind: ASTResultKind.OBJECT,
-        imports: [],
-        reference: ReferenceKind.PROPS,
-        attributes: [propName],
-        nodes: [
-          copySyntheticComments(
-            tsModule,
-            factory.createPropertyAssignment(
-              factory.createIdentifier(propName),
-              propArguments
-            ),
-            node
-          )
-        ]
-      }
+    const propName = node.name.getText()
+    const propArguments = decoratorArguments.length > 0 ? decoratorArguments[0] : factory.createObjectLiteralExpression();
+
+    return {
+      tag: 'Prop',
+      kind: ASTResultKind.OBJECT,
+      imports: [],
+      reference: ReferenceKind.PROPS,
+      attributes: [propName],
+      nodes: [
+        copySyntheticComments(
+          tsModule,
+          factory.createPropertyAssignment(
+            factory.createIdentifier(propName),
+            propArguments
+          ),
+          node
+        )
+      ]
     }
   }
 
