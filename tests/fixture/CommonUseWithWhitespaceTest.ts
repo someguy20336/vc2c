@@ -46,14 +46,29 @@ export default class BasicPropertyClass extends Vue {
   @Watch('msg')
   onMsgChanged (val: string, oldVal: string) {
     console.log(val, oldVal)
+    console.log(val, oldVal)
+
+    console.log(val, oldVal)
+    console.log(val, oldVal)
   }
 
   mounted () {
     this.msg = "Changed";
+
+    const a = 2;
+    const b = 5;
+
+    const c = a + b;
+
+    this.hello();
   }
 
   created () {
     this.hello();
+    
+    this.hello();
+    console.log("created")
+
   }
 
   beforeDestroy() {
@@ -61,6 +76,13 @@ export default class BasicPropertyClass extends Vue {
   }
 
   destroyed() {
+    console.log('destroyed')
+    
+    console.log('destroyed')
+    console.log('destroyed')
+
+    
+    console.log('destroyed')
     console.log('destroyed')
   }
 

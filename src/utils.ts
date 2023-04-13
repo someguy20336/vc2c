@@ -149,3 +149,17 @@ export function createIdentifier (tsModule: typeof ts, text: string): ts.Identif
   temp.getText = () => text
   return temp
 }
+
+const newLineMarker = "//^^^^^NewLineMarker^^^^^";
+
+export function encodeEmptyLines(text: string) {    
+    const lines = text.split(/\r?\n/);    
+    const commentedLines = lines.map(line => line.trim() == '' ? newLineMarker : line);    
+    return commentedLines.join("\r\n");
+}
+
+export function decodeEmptyLines(text: string){    
+    var lines = text.split(/\r?\n/);
+    const uncommentedLines = lines.map(line => line.trim() == newLineMarker ? '' : line);    
+    return uncommentedLines.join("\r\n");
+}

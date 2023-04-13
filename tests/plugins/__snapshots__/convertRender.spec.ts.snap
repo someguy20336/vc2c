@@ -2,6 +2,7 @@
 
 exports[`test convertRender convert class component render function 1`] = `
 "import { defineComponent } from 'vue'
+
 export default defineComponent({
   props: {},
   name: 'TestComp',

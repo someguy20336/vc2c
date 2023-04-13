@@ -7,14 +7,15 @@ import { readVueSFCOrTsFile, existsFileSync, FileInfo } from './file'
 import { setDebugMode } from './debug'
 import * as BuiltInPlugins from './plugins/builtIn'
 import { ConvertResult } from './plugins/types'
+import { decodeEmptyLines, encodeEmptyLines } from './utils'
 
 export function convert (content: string, inputOptions: InputVc2cOptions): ConvertResult {
-  const options = mergeVc2cOptions(getDefaultVc2cOptions(inputOptions.typescript), inputOptions)
-  const { ast, program } = getSingleFileProgram(content, options)
+  const options = mergeVc2cOptions(getDefaultVc2cOptions(inputOptions.typescript), inputOptions);
+  const { ast, program } = getSingleFileProgram(encodeEmptyLines(content), options)
 
   const convResult = convertAST(ast, options, program);
   if (convResult.success) {
-    convResult.convertedContent = format(convResult.convertedContent, options);
+    convResult.convertedContent = format(decodeEmptyLines(convResult.convertedContent), options);
   }
 
   return convResult;
