@@ -6,7 +6,8 @@ export const convertIntervalHook: ASTConverter<ts.MethodDeclaration> = (node, op
   const intervalHookName = node.name.getText()
 
   if (isInternalHook(intervalHookName)) {
-    const tsModule = options.typescript
+    const tsModule = options.typescript;
+    const factory = tsModule.factory;
     const namedImport = getMappedHook(intervalHookName)
     const needNamedImports = []
 
@@ -15,16 +16,16 @@ export const convertIntervalHook: ASTConverter<ts.MethodDeclaration> = (node, op
     }
 
     const outputNode = (needNamedImports.length > 0)
-      ? tsModule.createExpressionStatement(tsModule.createCall(
-        tsModule.createIdentifier(needNamedImports[0]),
+      ? factory.createExpressionStatement(factory.createCallExpression(
+        factory.createIdentifier(needNamedImports[0]),
         undefined,
-        [tsModule.createArrowFunction(
+        [factory.createArrowFunction(
           undefined,
           undefined,
           [],
           undefined,
-          tsModule.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
-          node.body ?? tsModule.createBlock([])
+          factory.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
+          node.body ?? factory.createBlock([])
         )]
       )) : node.body?.statements
 
@@ -47,7 +48,7 @@ export const convertIntervalHook: ASTConverter<ts.MethodDeclaration> = (node, op
       attributes: (needNamedImports.length > 0) ? needNamedImports : [],
       imports: [{
         named: needNamedImports,
-        external: (options.compatible) ? '@vue/composition-api' : 'vue'
+        external: 'vue'
       }],
       reference: ReferenceKind.NONE,
       nodes

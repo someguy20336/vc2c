@@ -62,3 +62,14 @@ export interface ASTConvertPlugins {
   [ts.SyntaxKind.MethodDeclaration]: Array<ASTConverter<ts.MethodDeclaration>>
   after: Array<ASTTransform>
 }
+
+export interface RunPluginResult {
+  astResults: ASTResult<ts.Node>[];
+  statement: ts.Statement;
+}
+
+export interface ConvertResult { 
+  success: boolean; 
+  convertedContent: string; 
+  error: string;
+}

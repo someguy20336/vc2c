@@ -7,35 +7,59 @@ import { exec } from 'child_process'
 const execAsync = util.promisify(exec)
 
 describe('testTSFile', () => {
-  const filePath = 'fixture/Input.ts'
+  const defComponentPath = 'fixture/Input.ts';
+  const commonCompPath = 'fixture/CommonUseWithWhitespaceTest.ts';
+  const multComponentPath = "fixture/MultipleComponents.ts";
+  const multComponentDefaultPath = "fixture/MultipleComponentsWithDefault.ts";
+  const componentAndNonCompPath = "fixture/ComponentWithNonComponentClass.ts";
 
-  it('compatible', () => {
-    const { file, result } = convertFile(filePath, __dirname, 'config/.compatible.vc2c.js')
-    expect(file.fsPath.includes(path.basename(filePath))).toBeTruthy()
+  it('converts a file with a single default component', () => {
+    const { file, result } = convertFile(defComponentPath, __dirname, '')
+    expect(file.fsPath.includes(path.basename(defComponentPath))).toBeTruthy()
     expect(path.isAbsolute(file.fsPath)).toBeTruthy()
     expect(file.kind).toBe(FileKind.TS)
     expect(file).not.toHaveProperty('start')
     expect(file).not.toHaveProperty('end')
-    expect(result).toMatchSnapshot()
-  })
+    expect(result.convertedContent).toMatchSnapshot()
+  });
 
-  it('no compatible', () => {
-    const { file, result } = convertFile(filePath, __dirname, 'config/.nocompatible.vc2c.js')
-    expect(file.fsPath.includes(path.basename(filePath))).toBeTruthy()
+  it('converts a file with a single default component with vertical whitespace', () => {
+    const { file, result } = convertFile(commonCompPath, __dirname, '')
+    expect(file.fsPath.includes(path.basename(commonCompPath))).toBeTruthy()
     expect(path.isAbsolute(file.fsPath)).toBeTruthy()
     expect(file.kind).toBe(FileKind.TS)
     expect(file).not.toHaveProperty('start')
     expect(file).not.toHaveProperty('end')
-    expect(result).toMatchSnapshot()
-  })
+    expect(result.convertedContent).toMatchSnapshot()
+  });
 
-  it('compatible and ts config file', async (done) => {
-    jest.setTimeout(10000)
-    const { stdout, stderr } = await execAsync(`node ${path.resolve(__dirname, '../bin/vc2c')} single -v -r ${__dirname} -c config/.compatible.vc2c.ts ${filePath}`)
+  it('converts a file with multiple components', () => {
+    const { file, result } = convertFile(multComponentPath, __dirname, '')
+    expect(file.fsPath.includes(path.basename(multComponentPath))).toBeTruthy()
+    expect(path.isAbsolute(file.fsPath)).toBeTruthy()
+    expect(file.kind).toBe(FileKind.TS)
+    expect(file).not.toHaveProperty('start')
+    expect(file).not.toHaveProperty('end')
+    expect(result.convertedContent).toMatchSnapshot()
+  });
 
-    expect(stdout).toMatchSnapshot('stdout')
-    expect(stderr).toMatchSnapshot('stderr')
+  it('converts a file with multiple components and one default', () => {
+    const { file, result } = convertFile(multComponentDefaultPath, __dirname, '')
+    expect(file.fsPath.includes(path.basename(multComponentDefaultPath))).toBeTruthy()
+    expect(path.isAbsolute(file.fsPath)).toBeTruthy()
+    expect(file.kind).toBe(FileKind.TS)
+    expect(file).not.toHaveProperty('start')
+    expect(file).not.toHaveProperty('end')
+    expect(result.convertedContent).toMatchSnapshot()
+  });
 
-    done()
-  })
+  it('converts a file with a component and non-component class', () => {
+    const { file, result } = convertFile(componentAndNonCompPath, __dirname, '')
+    expect(file.fsPath.includes(path.basename(componentAndNonCompPath))).toBeTruthy()
+    expect(path.isAbsolute(file.fsPath)).toBeTruthy()
+    expect(file.kind).toBe(FileKind.TS)
+    expect(file).not.toHaveProperty('start')
+    expect(file).not.toHaveProperty('end')
+    expect(result.convertedContent).toMatchSnapshot()
+  });
 })

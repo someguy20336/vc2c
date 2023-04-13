@@ -2,7 +2,7 @@ import { ASTConverter, ASTResultKind, ASTTransform, ReferenceKind } from '../typ
 import type ts from 'typescript'
 
 export const convertName: ASTConverter<ts.Identifier> = (node, options) => {
-  const tsModule = options.typescript
+  const factory = options.typescript.factory
   return {
     tag: 'Class-Name',
     kind: ASTResultKind.OBJECT,
@@ -10,9 +10,9 @@ export const convertName: ASTConverter<ts.Identifier> = (node, options) => {
     reference: ReferenceKind.NONE,
     attributes: [],
     nodes: [
-      tsModule.createPropertyAssignment(
-        tsModule.createIdentifier('name'),
-        tsModule.createStringLiteral(node.getText())
+      factory.createPropertyAssignment(
+        factory.createIdentifier('name'),
+        factory.createStringLiteral(node.getText())
       )
     ]
   }

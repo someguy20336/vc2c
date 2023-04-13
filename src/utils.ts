@@ -8,38 +8,38 @@ export function parseVueFile (vueTemplateParserModule: typeof vueTemplateParser,
   return vueTemplateParserModule.parseComponent(content)
 }
 
-export function getNodeFromExportNode (tsModule: typeof ts, exportExpr: ts.Node): ts.ClassDeclaration | undefined {
-  switch (exportExpr.kind) {
-    case tsModule.SyntaxKind.ClassDeclaration:
-      return exportExpr as ts.ClassDeclaration
-  }
-  return undefined
-}
-
-export function getDefaultExportNode (tsModule: typeof ts, sourceFile: ts.SourceFile): ts.ClassDeclaration | undefined {
+export function getClassDeclarationNodes (tsModule: typeof ts, sourceFile: ts.SourceFile): ts.ClassDeclaration[] | undefined {
   const exportStmts = sourceFile.statements.filter(
-    st => st.kind === tsModule.SyntaxKind.ClassDeclaration
+    st => tsModule.isClassDeclaration(st) && hasComponentDecorator(tsModule, st)
   )
   if (exportStmts.length === 0) {
     return undefined
   }
-  const exportNode = (exportStmts[0] as ts.ClassDeclaration)
 
-  return getNodeFromExportNode(tsModule, exportNode)
+  return exportStmts as ts.ClassDeclaration[];
+}
+
+export function getDecorator(tsModule: typeof ts, node: ts.Node, decName: string): ts.Decorator | undefined {
+  return getDecorators(tsModule, node)
+    .find((el) => (el.expression as ts.CallExpression).expression.getText() === decName);
 }
 
 export function getDecoratorNames (tsModule: typeof ts, node: ts.Node): string[] {
-  if (node.decorators) {
-    return node.decorators.map((el) => {
+  return getDecorators(tsModule, node).map((el) => {
       if (tsModule.isCallExpression(el.expression)) {
         return el.expression.expression.getText()
       } else {
         return el.expression.getText()
       }
-    })
-  }
+    });
+}
 
-  return []
+export function hasComponentDecorator(tsModule: typeof ts, node: ts.ClassDeclaration): boolean {
+  return getDecoratorNames(tsModule, node).includes('Component');
+}
+
+export function getDecorators(tsModule: typeof ts, node: ts.Node): readonly ts.Decorator[] {
+  return (tsModule.canHaveDecorators(node) ? tsModule.getDecorators(node) : []) ?? [];
 }
 
 const $internalHooks = new Map<string, string | false>([
@@ -47,6 +47,8 @@ const $internalHooks = new Map<string, string | false>([
   ['created', false],
   ['beforeMount', 'onBeforeMount'],
   ['mounted', 'onMounted'],
+  ['unmounted', 'onUnmounted'],
+  ['beforeUnmount', 'onBeforeUnmount'],
   ['beforeDestroy', 'onBeforeUnmount'],
   ['destroyed', 'onUnmounted'],
   ['beforeUpdate', 'onBeforeUpdate'],
@@ -60,6 +62,16 @@ const $internalHooks = new Map<string, string | false>([
 
 export function isInternalHook (methodName: string): boolean {
   return $internalHooks.has(methodName)
+}
+
+export function isNewInternalHook(name: string): boolean {
+  for (let hook of $internalHooks.values()) {
+    if (hook === name) {
+      return true;
+    }
+  }
+  
+  return false;
 }
 
 export function getMappedHook (methodName: string): string | undefined | false {
@@ -104,7 +116,7 @@ export function copySyntheticComments<T extends ts.Node> (tsModule: typeof ts, n
 
 export function removeComments<T extends ts.Node> (tsModule: typeof ts, node: T): T | ts.StringLiteral {
   if (tsModule.isStringLiteral(node)) {
-    return tsModule.createStringLiteral(node.text)
+    return tsModule.factory.createStringLiteral(node.text)
   }
   return node
 }
@@ -132,8 +144,22 @@ export function convertNodeToASTResult<T extends ts.Node> (tsModule: typeof ts, 
 
 // ts.createIdentifier() cannot call getText function, it's a hack.
 export function createIdentifier (tsModule: typeof ts, text: string): ts.Identifier {
-  const temp = tsModule.createIdentifier(text)
+  const temp = tsModule.factory.createIdentifier(text)
   // eslint-disable-next-line @typescript-eslint/unbound-method
   temp.getText = () => text
   return temp
+}
+
+const newLineMarker = "//^^^^^NewLineMarker^^^^^";
+
+export function encodeEmptyLines(text: string) {    
+    const lines = text.split(/\r?\n/);    
+    const commentedLines = lines.map(line => line.trim() == '' ? newLineMarker : line);    
+    return commentedLines.join("\r\n");
+}
+
+export function decodeEmptyLines(text: string){    
+    var lines = text.split(/\r?\n/);
+    const uncommentedLines = lines.map(line => line.trim() == newLineMarker ? '' : line);    
+    return uncommentedLines.join("\r\n");
 }

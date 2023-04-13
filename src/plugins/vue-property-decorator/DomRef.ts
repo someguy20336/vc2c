@@ -1,16 +1,15 @@
 import { ASTConverter, ASTResultKind, ReferenceKind } from '../types'
 import type ts from 'typescript'
-import { copySyntheticComments } from '../../utils'
+import { copySyntheticComments, getDecorator } from '../../utils'
 
 const refDecoratorName = 'Ref'
 
 export const convertDomRef: ASTConverter<ts.PropertyDeclaration> = (node, options) => {
-  if (!node.decorators) {
-    return false
-  }
-  const decorator = node.decorators.find((el) => (el.expression as ts.CallExpression).expression.getText() === refDecoratorName)
+
+  const tsModule = options.typescript;
+  const factory = tsModule.factory;
+  const decorator = getDecorator(tsModule, node, refDecoratorName);
   if (decorator) {
-    const tsModule = options.typescript
     const refName = node.name.getText()
 
     return {
@@ -18,23 +17,24 @@ export const convertDomRef: ASTConverter<ts.PropertyDeclaration> = (node, option
       kind: ASTResultKind.COMPOSITION,
       imports: [{
         named: ['ref'],
-        external: (options.compatible) ? '@vue/composition-api' : 'vue'
+        external: 'vue'
       }],
       reference: ReferenceKind.VARIABLE_NON_NULL_VALUE,
       attributes: [refName],
       nodes: [
         copySyntheticComments(
           tsModule,
-          tsModule.createVariableStatement(
+          factory.createVariableStatement(
             undefined,
-            tsModule.createVariableDeclarationList([
-              tsModule.createVariableDeclaration(
-                tsModule.createIdentifier(refName),
+            factory.createVariableDeclarationList([
+              factory.createVariableDeclaration(
+                factory.createIdentifier(refName),
                 undefined,
-                tsModule.createCall(
-                  tsModule.createIdentifier('ref'),
+                undefined,
+                factory.createCallExpression(
+                  factory.createIdentifier('ref'),
                   node.type ? [node.type] : [],
-                  [tsModule.createNull()]
+                  [factory.createNull()]
                 )
               )
             ],

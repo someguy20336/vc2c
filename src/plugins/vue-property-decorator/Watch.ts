@@ -1,34 +1,45 @@
 import { ASTConverter, ASTResultKind, ReferenceKind } from '../types'
 import type ts from 'typescript'
-import { copySyntheticComments, createIdentifier } from '../../utils'
+import { copySyntheticComments, createIdentifier, getDecorator } from '../../utils'
 
 const watchDecoratorName = 'Watch'
 
 export const convertWatch: ASTConverter<ts.MethodDeclaration> = (node, options) => {
-  if (!node.decorators) {
-    return false
-  }
-  const decorator = node.decorators.find((el) => (el.expression as ts.CallExpression).expression.getText() === watchDecoratorName)
+
+  const tsModule = options.typescript;
+  const factory = tsModule.factory;
+  const decorator = getDecorator(tsModule, node, watchDecoratorName);
   if (decorator) {
-    const tsModule = options.typescript
     const decoratorArguments = (decorator.expression as ts.CallExpression).arguments
-    if (decoratorArguments.length > 1) {
+    if (decoratorArguments.length) {
       const keyName = (decoratorArguments[0] as ts.StringLiteral).text
       const watchArguments = decoratorArguments[1]
-      const method = tsModule.createArrowFunction(
-        node.modifiers,
+      const method = factory.createArrowFunction(
+        tsModule.getModifiers(node),
         node.typeParameters,
         node.parameters,
         node.type,
-        tsModule.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
-        node.body ?? tsModule.createBlock([], false)
+        factory.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
+        node.body ?? factory.createBlock([], false)
       )
       const watchOptions: ts.PropertyAssignment[] = []
-      if (tsModule.isObjectLiteralExpression(watchArguments)) {
+      if (watchArguments && tsModule.isObjectLiteralExpression(watchArguments)) {
         watchArguments.properties.forEach((el) => {
           if (!tsModule.isPropertyAssignment(el)) return
           watchOptions.push(el)
         })
+      }
+
+      const watchFuncs: ts.Expression[] = [
+        factory.createPropertyAccessExpression(
+          factory.createThis(),
+          createIdentifier(tsModule, keyName)
+        ),
+        method,
+      ]
+
+      if (watchOptions.length) {
+        watchFuncs.push(factory.createObjectLiteralExpression(watchOptions))
       }
 
       return {
@@ -36,25 +47,18 @@ export const convertWatch: ASTConverter<ts.MethodDeclaration> = (node, options) 
         kind: ASTResultKind.COMPOSITION,
         imports: [{
           named: ['watch'],
-          external: (options.compatible) ? '@vue/composition-api' : 'vue'
+          external: 'vue'
         }],
         reference: ReferenceKind.VARIABLE,
         attributes: [keyName],
         nodes: [
-          tsModule.createExpressionStatement(
+          factory.createExpressionStatement(
             copySyntheticComments(
               tsModule,
-              tsModule.createCall(
-                tsModule.createIdentifier('watch'),
+              factory.createCallExpression(
+                factory.createIdentifier('watch'),
                 undefined,
-                [
-                  tsModule.createPropertyAccess(
-                    tsModule.createThis(),
-                    createIdentifier(tsModule, keyName)
-                  ),
-                  method,
-                  tsModule.createObjectLiteral(watchOptions)
-                ]
+                watchFuncs
               ),
               node
             )

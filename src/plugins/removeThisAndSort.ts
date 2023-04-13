@@ -27,54 +27,92 @@ export const removeThisAndSort: ASTTransform = (astResults, options) => {
     return contextKey.get(key)
   }
 
+  const convertCompositionAPIKey = (key: string) => {
+    const keyMap = new Map([
+      ['$router', 'router'],
+      ['$route', 'route'],
+      ['$watch', 'watch'],
+      ['$store', 'store'],
+      // ['$refs', ''],
+      ['$nextTick', 'nextTick']
+    ])
+
+    return keyMap.get(key)
+  }
+
+  const IVIEW = ['$Message', '$Loading', '$Modal']
+
   let dependents: string[] = []
 
+  const factory = tsModule.factory;
   const transformer: () => ts.TransformerFactory<ts.Node> = () => {
+    let noValue: boolean = false;
+
+    const transformProperty = (propertyName: string): ts.Expression => {
+      // Watch args should not use ".value"      
+      dependents.push(propertyName);
+      if  (noValue) {
+        noValue = false;
+        return factory.createIdentifier(propertyName);
+      }
+      return factory.createPropertyAccessExpression(
+        factory.createIdentifier(propertyName),
+        factory.createIdentifier('value')
+      )
+    }
+
     return (context) => {
       const removeThisVisitor: ts.Visitor = (node) => {
         if (tsModule.isPropertyAccessExpression(node)) {
           if (node.expression.kind === tsModule.SyntaxKind.ThisKeyword) {
-            const propertyName = node.name.getText()
+            const propertyName = node.name.getText();
+
             if (refVariables.includes(propertyName)) {
               dependents.push(propertyName)
-              return tsModule.createPropertyAccess(
-                tsModule.createIdentifier(propertyName),
-                tsModule.createIdentifier('value')
-              )
+              return transformProperty(propertyName);
             } else if (domeRefVariables.includes(propertyName)) {
               dependents.push(propertyName)
-              return tsModule.createNonNullExpression(
-                tsModule.createPropertyAccess(
-                  tsModule.createIdentifier(propertyName),
-                  tsModule.createIdentifier('value')
-                )
+              return factory.createNonNullExpression(
+                transformProperty(propertyName)
               )
             } else if (propVariables.includes(propertyName)) {
               dependents.push(propertyName)
-              return tsModule.createPropertyAccess(
-                tsModule.createIdentifier(options.setupPropsKey),
-                tsModule.createIdentifier(propertyName)
+              return factory.createPropertyAccessExpression(
+                factory.createIdentifier(options.setupPropsKey),
+                factory.createIdentifier(propertyName)
               )
             } else if (variables.includes(propertyName)) {
               dependents.push(propertyName)
-              return tsModule.createIdentifier(propertyName)
+              return factory.createIdentifier(propertyName)
             } else {
               const convertKey = convertContextKey(propertyName)
               if (convertKey) {
-                return tsModule.createPropertyAccess(
-                  tsModule.createIdentifier(options.setupContextKey),
-                  tsModule.createIdentifier(convertKey)
+                return factory.createPropertyAccessExpression(
+                  factory.createIdentifier(options.setupContextKey),
+                  factory.createIdentifier(convertKey)
+                )
+              }
+
+              const apiKey = convertCompositionAPIKey(propertyName)
+              if (apiKey) {
+                return factory.createIdentifier(apiKey)
+              }
+
+              if (IVIEW.includes(propertyName)) {
+                return factory.createPropertyAccessExpression(
+                  factory.createIdentifier('instance?.proxy?'),
+                  factory.createIdentifier(propertyName)
                 )
               }
 
               return addTodoComment(
                 tsModule,
-                tsModule.createPropertyAccess(
-                  tsModule.createPropertyAccess(
-                    tsModule.createIdentifier(options.setupContextKey),
-                    tsModule.createIdentifier('root')
+                factory.createPropertyAccessExpression(
+                  factory.createPropertyAccessExpression(
+                    factory.createIdentifier(options.setupContextKey),
+                    factory.createIdentifier('root')
                   ),
-                  tsModule.createIdentifier(propertyName)
+                  factory.createIdentifier(propertyName)
                 ),
                 'Check this convert result, it can work well in 80% case.',
                 true
@@ -82,6 +120,18 @@ export const removeThisAndSort: ASTTransform = (astResults, options) => {
             }
           }
           return tsModule.visitEachChild(node, removeThisVisitor, context)
+        } else if (tsModule.isCallExpression(node) && tsModule.isIdentifier(node.expression) && node.expression.text === "watch") {
+          
+          noValue = true;
+          return factory.createCallExpression(
+            node.expression,
+            undefined,
+            node.arguments.map(exp => {              
+              const newNode = tsModule.visitNode(exp, removeThisVisitor);
+              noValue = false;
+              return newNode;
+            })
+          );
         }
         return tsModule.visitEachChild(node, removeThisVisitor, context)
       }

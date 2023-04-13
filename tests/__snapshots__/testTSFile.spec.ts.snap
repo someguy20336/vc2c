@@ -1,137 +1,40 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`testTSFile compatible 1`] = `
-"import {
-  computed,
-  reactive,
-  toRefs,
-  ref,
-  onBeforeUnmount,
-  onUnmounted,
-  watch,
-  onMounted,
-  defineComponent
-} from '@vue/composition-api'
+exports[`testTSFile converts a file with a component and non-component class 1`] = `
+"import { defineComponent } from 'vue'
+
+export class NonComponent {
+  public testOne: string = '1'
+  public testTwo: number = 2
+}
 
 /**
  * My basic tag
  */
-export default defineComponent({
-  model: {
-    prop: 'checked',
-    event: 'change'
-  },
+export const BasicPropertyClass = defineComponent({
   props: {
-    bar: String,
-    checked: { type: Boolean },
     /**
      * My foo
      */
     foo: { type: Number, default: false }
   },
-  name: 'oao',
+  name: 'BasicPropertyClass',
   setup(props, context) {
     /**
-     * My count
-     */
-    const count = computed(() => {
-      return /* TODO: Check this convert result, it can work well in 80% case.*/ context
-        .root.$store.state.count
-    })
-
-    const { a } = (() => {
-      const a = 'pa'
-
-      return toRefs(
-        reactive({
-          a: a
-        })
-      )
-    })()
-
-    const anotherComponent = ref<HTMLElement>(null)
-
-    /**
-     * My msg
-     */
-    const msg = ref('Vetur means \\"Winter\\" in icelandic.') // foo
-
-    const onMsgChanged = (val: string, newVal: string) => {
-      console.log(val, newVal)
-    }
-
-    onBeforeUnmount(() => {
-      context.emit('tearing down')
-    })
-    onUnmounted(() => {
-      console.log('destroyed')
-    })
-
-    const click = (c: string) => {
-      context.emit('click', c)
-    }
-
-    const value = computed({
-      get: () => {
-        return props.checked
-      },
-      set: (value: boolean) => {
-        context.emit('change', value)
-      }
-    })
-
-    watch(
-      props.checked,
-      (val: boolean, newVal: boolean) => {
-        console.log(val, newVal)
-        console.log(anotherComponent.value!)
-      },
-      { deep: true, immediate: true }
-    )
-    onMounted(() => {
-      click('oao')
-    })
-
-    const removeItem = () => {
-      if (props.foo > 10) {
-        context.emit('remove-item', 10)
-      } else {
-        context.emit('remove-item', props.foo)
-      }
-    }
-
-    /**
      * My greeting
      */
     const hello = () => {
-      console.log(msg.value)
+      console.log('eh')
     }
 
-    removeItem()
     // TODO: Please remove unused return variable
-    return {
-      count,
-      a,
-      anotherComponent,
-      msg,
-      onMsgChanged,
-      onBeforeUnmount,
-      onUnmounted,
-      click,
-      value,
-      checked,
-      onMounted,
-      removeItem,
-      hello
-    }
+    return { hello }
   }
 })
 "
 `;
 
-exports[`testTSFile compatible and ts config file: stderr 1`] = `""`;
-
-exports[`testTSFile compatible and ts config file: stdout 1`] = `
+exports[`testTSFile converts a file with a single default component 1`] = `
 "import {
   computed,
   reactive,
@@ -142,141 +45,12 @@ exports[`testTSFile compatible and ts config file: stdout 1`] = `
   watch,
   onMounted,
   defineComponent
-} from '@vue/composition-api'
-
-/**
- * My basic tag
- */
-export default defineComponent({
-  model: {
-    prop: 'checked',
-    event: 'change'
-  },
-  props: {
-    bar: String,
-    checked: { type: Boolean },
-    /**
-     * My foo
-     */
-    foo: { type: Number, default: false }
-  },
-  name: 'oao',
-  setup(props, ctx) {
-    /**
-     * My count
-     */
-    const count = computed(() => {
-      return /* TODO: Check this convert result, it can work well in 80% case.*/ ctx
-        .root.$store.state.count
-    })
-
-    const { a } = (() => {
-      const a = 'pa'
-
-      return toRefs(
-        reactive({
-          a: a
-        })
-      )
-    })()
-
-    const anotherComponent = ref<HTMLElement>(null)
-
-    /**
-     * My msg
-     */
-    const msg = ref('Vetur means \\"Winter\\" in icelandic.') // foo
-
-    const onMsgChanged = (val: string, newVal: string) => {
-      console.log(val, newVal)
-    }
-
-    onBeforeUnmount(() => {
-      ctx.emit('tearing down')
-    })
-    onUnmounted(() => {
-      console.log('destroyed')
-    })
-
-    const click = (c: string) => {
-      context.emit('click', c)
-    }
-
-    const value = computed({
-      get: () => {
-        return props.checked
-      },
-      set: (value: boolean) => {
-        ctx.emit('change', value)
-      }
-    })
-
-    watch(
-      props.checked,
-      (val: boolean, newVal: boolean) => {
-        console.log(val, newVal)
-        console.log(anotherComponent.value!)
-      },
-      { deep: true, immediate: true }
-    )
-    onMounted(() => {
-      click('oao')
-    })
-
-    const removeItem = () => {
-      if (props.foo > 10) {
-        context.emit('remove-item', 10)
-      } else {
-        context.emit('remove-item', props.foo)
-      }
-    }
-
-    /**
-     * My greeting
-     */
-    const hello = () => {
-      console.log(msg.value)
-    }
-
-    removeItem()
-    // TODO: Please remove unused return variable
-    return {
-      count,
-      a,
-      anotherComponent,
-      msg,
-      onMsgChanged,
-      onBeforeUnmount,
-      onUnmounted,
-      click,
-      value,
-      checked,
-      onMounted,
-      removeItem,
-      hello
-    }
-  }
-})
-
-"
-`;
-
-exports[`testTSFile no compatible 1`] = `
-"import {
-  computed,
-  reactive,
-  toRefs,
-  ref,
-  onBeforeUnmount,
-  onUnmounted,
-  watch,
-  onMounted
 } from 'vue'
 
 /**
  * My basic tag
  */
-export default {
+export default defineComponent({
   model: {
     prop: 'checked',
     event: 'change'
@@ -295,8 +69,7 @@ export default {
      * My count
      */
     const count = computed(() => {
-      return /* TODO: Check this convert result, it can work well in 80% case.*/ context
-        .root.$store.state.count
+      return store.state.count
     })
 
     const { a } = (() => {
@@ -316,13 +89,10 @@ export default {
      */
     const msg = ref('Vetur means \\"Winter\\" in icelandic.') // foo
 
-    const onMsgChanged = (val: string, newVal: string) => {
-      console.log(val, newVal)
-    }
-
     onBeforeUnmount(() => {
       context.emit('tearing down')
     })
+
     onUnmounted(() => {
       console.log('destroyed')
     })
@@ -348,6 +118,10 @@ export default {
       },
       { deep: true, immediate: true }
     )
+    watch(msg, (val: string, newVal: string) => {
+      console.log(val, newVal)
+    })
+
     onMounted(() => {
       click('oao')
     })
@@ -374,17 +148,260 @@ export default {
       a,
       anotherComponent,
       msg,
-      onMsgChanged,
-      onBeforeUnmount,
-      onUnmounted,
       click,
       value,
       checked,
-      onMounted,
       removeItem,
       hello
     }
   }
-}
+})
+"
+`;
+
+exports[`testTSFile converts a file with a single default component with vertical whitespace 1`] = `
+"import {
+  ref,
+  onBeforeUnmount,
+  onUnmounted,
+  computed,
+  watch,
+  onMounted,
+  defineComponent
+} from 'vue'
+
+/**
+ * My basic tag
+ */
+export default defineComponent({
+  props: {
+    /**
+     * My foo
+     */
+    aProperty: { type: Number, default: false },
+    propWithNothing: {}
+  },
+  name: 'general-usage',
+  template: '#test-template',
+  setup(props, context) {
+    /**
+     * My msg
+     */
+    const msg = ref('Vetur means \\"Winter\\" in icelandic.')
+
+    onBeforeUnmount(() => {
+      context.emit('tearing down')
+    })
+
+    onUnmounted(() => {
+      console.log('destroyed')
+
+      console.log('destroyed')
+      console.log('destroyed')
+
+
+      console.log('destroyed')
+      console.log('destroyed')
+    })
+
+    /**
+     * Computed
+     */
+    const computedGetterOnly = computed(() => {
+      return props.aProperty + 1
+    })
+
+    const computedGetterSetter = computed({
+      get: () => {
+        return props.propWithNothing + '-appended'
+      },
+      set: (value: string) => {
+        context.emit('change', value)
+      }
+    })
+
+    watch(msg, (val: string, oldVal: string) => {
+      console.log(val, oldVal)
+      console.log(val, oldVal)
+
+      console.log(val, oldVal)
+      console.log(val, oldVal)
+    })
+
+    /**
+     * My greeting
+     */
+    const hello = () => {
+      console.log(msg.value)
+    }
+
+    watch(
+      computedGetterOnly,
+      (val: number, oldVal: number | undefined) => {
+        console.log(val, oldVal)
+      },
+      { deep: true, immediate: true }
+    )
+
+    onMounted(() => {
+      msg.value = 'Changed'
+
+      const a = 2
+      const b = 5
+
+      const c = a + b
+
+      hello()
+    })
+    hello()
+
+    hello()
+    console.log('created')
+    // TODO: Please remove unused return variable
+    return { msg, computedGetterOnly, computedGetterSetter, hello }
+  }
+})
+"
+`;
+
+exports[`testTSFile converts a file with multiple components 1`] = `
+"import { defineComponent } from 'vue'
+
+/**
+ * My basic tag
+ */
+export const BasicPropertyClass = defineComponent({
+  props: {
+    /**
+     * My foo
+     */
+    foo: { type: Number, default: false }
+  },
+  name: 'BasicPropertyClass',
+  setup(props, context) {
+    /**
+     * My greeting
+     */
+    const hello = () => {
+      console.log('eh')
+    }
+
+    // TODO: Please remove unused return variable
+    return { hello }
+  }
+})
+
+export const AnotherComponent = defineComponent({
+  props: {
+    /**
+     * My foo
+     */
+    foo: { type: Number, default: false }
+  },
+  name: 'AnotherComponent',
+  setup(props, context) {
+    /**
+     * My greeting
+     */
+    const hello2 = () => {
+      console.log('eh')
+    }
+
+    // TODO: Please remove unused return variable
+    return { hello2 }
+  }
+})
+
+export const AThirdComponent = defineComponent({
+  props: {
+    /**
+     * My foo
+     */
+    foo: { type: Number, default: false }
+  },
+  name: 'AThirdComponent',
+  setup(props, context) {
+    /**
+     * My greeting
+     */
+    const hello3 = () => {
+      console.log('eh')
+    }
+
+    // TODO: Please remove unused return variable
+    return { hello3 }
+  }
+})
+"
+`;
+
+exports[`testTSFile converts a file with multiple components and one default 1`] = `
+"import { defineComponent } from 'vue'
+
+/**
+ * My basic tag
+ */
+export const BasicPropertyClass = defineComponent({
+  props: {
+    /**
+     * My foo
+     */
+    foo: { type: Number, default: false }
+  },
+  name: 'BasicPropertyClass',
+  setup(props, context) {
+    /**
+     * My greeting
+     */
+    const hello = () => {
+      console.log('eh')
+    }
+
+    // TODO: Please remove unused return variable
+    return { hello }
+  }
+})
+
+export const AnotherComponent = defineComponent({
+  props: {
+    /**
+     * My foo
+     */
+    foo: { type: Number, default: false }
+  },
+  name: 'AnotherComponent',
+  setup(props, context) {
+    /**
+     * My greeting
+     */
+    const hello2 = () => {
+      console.log('eh')
+    }
+
+    // TODO: Please remove unused return variable
+    return { hello2 }
+  }
+})
+
+export default defineComponent({
+  props: {
+    /**
+     * My foo
+     */
+    foo: { type: Number, default: false }
+  },
+  name: 'AThirdDefaultComponent',
+  setup(props, context) {
+    /**
+     * My greeting
+     */
+    const hello3 = () => {
+      console.log('eh')
+    }
+
+    // TODO: Please remove unused return variable
+    return { hello3 }
+  }
+})
 "
 `;

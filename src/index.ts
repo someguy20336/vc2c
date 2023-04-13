@@ -6,15 +6,22 @@ import path from 'path'
 import { readVueSFCOrTsFile, existsFileSync, FileInfo } from './file'
 import { setDebugMode } from './debug'
 import * as BuiltInPlugins from './plugins/builtIn'
+import { ConvertResult } from './plugins/types'
+import { decodeEmptyLines, encodeEmptyLines } from './utils'
 
-export function convert (content: string, inputOptions: InputVc2cOptions): string {
-  const options = mergeVc2cOptions(getDefaultVc2cOptions(inputOptions.typescript), inputOptions)
-  const { ast, program } = getSingleFileProgram(content, options)
+export function convert (content: string, inputOptions: InputVc2cOptions): ConvertResult {
+  const options = mergeVc2cOptions(getDefaultVc2cOptions(inputOptions.typescript), inputOptions);
+  const { ast, program } = getSingleFileProgram(encodeEmptyLines(content), options)
 
-  return format(convertAST(ast, options, program), options)
+  const convResult = convertAST(ast, options, program);
+  if (convResult.success) {
+    convResult.convertedContent = format(decodeEmptyLines(convResult.convertedContent), options);
+  }
+
+  return convResult;
 }
 
-export function convertFile (filePath: string, root: string, config: string): { file: FileInfo, result: string } {
+export function convertFile (filePath: string, root: string, config: string): { file: FileInfo, result: ConvertResult } {
   root = (typeof root === 'string')
     ? (
       path.isAbsolute(root) ? root : path.resolve(process.cwd(), root)
@@ -24,7 +31,7 @@ export function convertFile (filePath: string, root: string, config: string): { 
   if (config.endsWith('.ts')) {
     require('ts-node/register')
   }
-  const inputOptions: InputVc2cOptions = existsFileSync(path.resolve(root, config))
+  const inputOptions: InputVc2cOptions = config && existsFileSync(path.resolve(root, config))
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     ? require(path.resolve(root, config)) as InputVc2cOptions
     : {}

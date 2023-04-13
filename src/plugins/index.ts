@@ -1,7 +1,7 @@
 import type ts from 'typescript'
 import { Vc2cOptions } from '../options'
-import { ASTConvertPlugins, ASTResult, ASTConverter, ASTResultKind } from './types'
-import { copySyntheticComments, addTodoComment, convertNodeToASTResult } from '../utils'
+import { ASTConvertPlugins, ASTResult, ASTConverter, ASTResultKind, RunPluginResult } from './types'
+import { copySyntheticComments, addTodoComment, convertNodeToASTResult, isNewInternalHook } from '../utils'
 import { log } from '../debug'
 import { convertObjName } from './vue-class-component/object/ComponentName'
 import { convertObjProps } from './vue-class-component/object/Prop'
@@ -132,17 +132,27 @@ export function getASTResults (
 }
 
 export function convertASTResultToSetupFn (astResults: ASTResult<ts.Node>[], options: Vc2cOptions): ts.MethodDeclaration {
-  const tsModule = options.typescript
-
+  const factory = options.typescript.factory;
+  const retVars: Set<string> = new Set<string>();
+  
   const returnStatement = addTodoComment(
-    tsModule,
-    tsModule.createReturn(
-      tsModule.createObjectLiteral([
+    options.typescript,
+    factory.createReturnStatement(
+      factory.createObjectLiteralExpression([
         ...astResults
           .filter((el) => el.kind === ASTResultKind.COMPOSITION)
-          .reduce((array, el) => array.concat(el.attributes), [] as string[])
-          .map((el) => tsModule.createShorthandPropertyAssignment(
-            tsModule.createIdentifier(el),
+          .reduce((array, el) => {
+            for (let attr of el.attributes) {
+              // De-duplicate and remove internal hooks
+              if (!array.includes(attr) && !isNewInternalHook(attr)) {
+                array.push(attr);
+              }
+            }
+            
+            return array;
+          }, [] as string[])
+          .map((el) => factory.createShorthandPropertyAssignment(
+            factory.createIdentifier(el),
             undefined
           ))
       ])
@@ -151,35 +161,32 @@ export function convertASTResultToSetupFn (astResults: ASTResult<ts.Node>[], opt
     false
   )
 
-  return tsModule.createMethod(
+  return factory.createMethodDeclaration(
     undefined,
     undefined,
-    undefined,
-    tsModule.createIdentifier('setup'),
+    factory.createIdentifier('setup'),
     undefined,
     undefined,
     [
-      tsModule.createParameter(
+      factory.createParameterDeclaration(
         undefined,
         undefined,
-        undefined,
-        tsModule.createIdentifier(options.setupPropsKey),
+        factory.createIdentifier(options.setupPropsKey),
         undefined,
         undefined,
         undefined
       ),
-      tsModule.createParameter(
+      factory.createParameterDeclaration(
         undefined,
         undefined,
-        undefined,
-        tsModule.createIdentifier(options.setupContextKey),
+        factory.createIdentifier(options.setupContextKey),
         undefined,
         undefined,
         undefined
       )
     ],
     undefined,
-    tsModule.createBlock(
+    factory.createBlock(
       [
         ...astResults
           .filter((el) => el.kind === ASTResultKind.COMPOSITION)
@@ -195,7 +202,7 @@ export function convertASTResultToSetupFn (astResults: ASTResult<ts.Node>[], opt
 export function convertASTResultToImport (astResults: ASTResult<ts.Node>[], options: Vc2cOptions): ts.ImportDeclaration[] {
   interface Clause { named: Set<string>, default?: string }
 
-  const tsModule = options.typescript
+  const factory = options.typescript.factory;
   const importMap = new Map<string, Clause>()
   for (const result of astResults) {
     for (const importInfo of result.imports) {
@@ -211,28 +218,30 @@ export function convertASTResultToImport (astResults: ASTResult<ts.Node>[], opti
     }
   }
 
-  if (options.compatible && importMap.has('@vue/composition-api')) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const temp = importMap.get('@vue/composition-api')!
-    temp.named.add('defineComponent')
-    importMap.set('@vue/composition-api', temp)
+  !importMap.has('vue') && importMap.set('vue', { named: new Set() });
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const temp = importMap.get('vue')!;
+  if (!temp.named.has("defineComponent")) {
+    temp.named.add('defineComponent');
+    importMap.set('vue', temp);
   }
 
   return Array.from(importMap).map((el) => {
     const [key, clause] = el
-    return tsModule.createImportDeclaration(
+    return factory.createImportDeclaration(
       undefined,
-      undefined,
-      tsModule.createImportClause(
-        (clause.default) ? tsModule.createIdentifier(clause.default) : undefined,
-        tsModule.createNamedImports([...clause.named]
-          .map((named) => tsModule.createImportSpecifier(
+      factory.createImportClause(
+        false,  // TODO What is this
+        undefined,
+        factory.createNamedImports([...clause.named]
+          .map((named) => factory.createImportSpecifier(
+            false,
             undefined,
-            tsModule.createIdentifier(named)
+            factory.createIdentifier(named)
           ))
         )
       ),
-      tsModule.createStringLiteral(key)
+      factory.createStringLiteral(key)
     )
   })
 }
@@ -241,8 +250,9 @@ export function runPlugins (
   node: ts.ClassDeclaration,
   options: Vc2cOptions,
   program: ts.Program
-): ts.Statement[] {
-  const tsModule = options.typescript
+): RunPluginResult {
+  const tsModule = options.typescript;
+  const factory = tsModule.factory;
   log('Start Run ASTPlugins')
   const results = getASTResults(node, options, program)
   log('Finished ASTPlugins')
@@ -250,11 +260,10 @@ export function runPlugins (
   log('Make setup function')
   const setupFn = convertASTResultToSetupFn(results, options)
   log('Make default export object')
-  const exportDefaultExpr = (options.compatible)
-    ? tsModule.createCall(
-      tsModule.createIdentifier('defineComponent'),
+  const defineComponentExpr = factory.createCallExpression(
+      factory.createIdentifier('defineComponent'),
       undefined,
-      [tsModule.createObjectLiteral(
+      [factory.createObjectLiteralExpression(
         [
           ...results
             .filter((el) => el.kind === ASTResultKind.OBJECT)
@@ -264,34 +273,42 @@ export function runPlugins (
         ],
         true
       )]
-    )
-    : tsModule.createObjectLiteral(
-      [
-        ...results
-          .filter((el) => el.kind === ASTResultKind.OBJECT)
-          .map((el) => el.nodes)
-          .reduce((array, el) => array.concat(el), []) as ts.PropertyAssignment[],
-        setupFn
-      ],
-      true
-    )
+    );
 
+  // Select which one based on the modifier of the class
+  // Export default
+  let exportExpr: ts.Statement;
+  if (tsModule.getModifiers(node)?.some(m => m.kind === tsModule.SyntaxKind.DefaultKeyword)) {
+    // export default ...
+    exportExpr = tsModule.factory.createExportAssignment(
+      undefined,
+      undefined,
+      defineComponentExpr
+    );
+  } else {
+    // export const <name> ...
+    exportExpr = factory.createVariableStatement(
+      [factory.createToken(tsModule.SyntaxKind.ExportKeyword)],
+      factory.createVariableDeclarationList(
+        [factory.createVariableDeclaration(
+          factory.createIdentifier(node.name!.getText()),
+          undefined,
+          undefined,
+          defineComponentExpr
+        )],
+        tsModule.NodeFlags.Const
+      )
+    );
+  }
+  
   const exportAssignment = copySyntheticComments(
     tsModule,
-    tsModule.createExportAssignment(
-      undefined,
-      undefined,
-      undefined,
-      exportDefaultExpr
-    ),
+    exportExpr,
     node
-  )
+  );
 
-  log('Make ImportDeclaration')
-  const importDeclaration = convertASTResultToImport(results, options)
-
-  return [
-    ...importDeclaration,
-    exportAssignment
-  ]
+  return {
+    astResults: results,
+    statement: exportAssignment
+  };
 }

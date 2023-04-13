@@ -1,15 +1,16 @@
 import type ts from 'typescript'
-import { getDecoratorNames, getDefaultExportNode } from './utils'
-import { runPlugins } from './plugins'
+import { getClassDeclarationNodes, hasComponentDecorator } from './utils'
+import { convertASTResultToImport, runPlugins } from './plugins'
 import { Vc2cOptions } from './options'
 import { log } from './debug'
+import { ASTResult, ConvertResult } from './plugins/types'
 
 const vueClassModules = [
   'vue-class-component',
   'vue-property-decorator'
 ]
 
-export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, program: ts.Program): string {
+export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, program: ts.Program): ConvertResult {
   const tsModule = options.typescript
 
   log('check vue class library')
@@ -23,27 +24,44 @@ export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, pro
       return false
     })
   if (!vueClassModuleImportStatement) {
-    throw new Error('no vue class library in this file.')
+    return {
+      success: false,
+      convertedContent: "",
+      error: "No vue class library in this file"
+    }
   }
 
   log('check default export class')
-  const defaultExportNode = getDefaultExportNode(options.typescript, sourceFile)
-  if (!defaultExportNode) {
-    throw new Error('no default export class')
-  }
 
   const otherStatements = sourceFile.statements
     .map((el) => el)
     .filter((el) =>
-      !((tsModule.isClassDeclaration(el) && getDecoratorNames(tsModule, el).includes('Component')) ||
+      !((tsModule.isClassDeclaration(el) && hasComponentDecorator(tsModule, el)) ||
       (tsModule.isImportDeclaration(el) && vueClassModules.includes((el.moduleSpecifier as ts.StringLiteral).text)) ||
       (tsModule.isImportDeclaration(el) && (el.moduleSpecifier as ts.StringLiteral).text === 'vue'))
     )
 
-  let resultStatements = [
-    ...otherStatements,
-    ...runPlugins(defaultExportNode, options, program)
-  ]
+  let resultStatements = otherStatements;
+
+  const classNodes = getClassDeclarationNodes(options.typescript, sourceFile)
+  if (!classNodes) {
+    return {
+      success: false,
+      convertedContent: "",
+      error: "No vue class components found in this file"
+    }
+  }
+
+  let astResults: ASTResult<ts.Node>[] = [];
+
+  for (let cNode of classNodes) {
+    const result = runPlugins(cNode, options, program);
+    astResults = astResults.concat(result.astResults);
+    resultStatements.push(result.statement);
+  }
+  
+  log('Make ImportDeclaration')
+  resultStatements = resultStatements.concat(convertASTResultToImport(astResults, options));
 
   resultStatements = [
     ...resultStatements.filter((el) => tsModule.isImportDeclaration(el)),
@@ -52,7 +70,11 @@ export function convertAST (sourceFile: ts.SourceFile, options: Vc2cOptions, pro
 
   log('output result code')
   const printer = tsModule.createPrinter()
-  const result = printer.printFile(tsModule.updateSourceFileNode(sourceFile, resultStatements))
+  const result = printer.printFile(tsModule.factory.updateSourceFile(sourceFile, resultStatements))
 
-  return result
+  return {
+    success: true,
+    convertedContent: result,
+    error: ""
+  };
 }

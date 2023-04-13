@@ -3,7 +3,8 @@ import type ts from 'typescript'
 import { copySyntheticComments } from '../../utils'
 
 export const convertGetter: ASTConverter<ts.GetAccessorDeclaration> = (node, options) => {
-  const tsModule = options.typescript
+  const tsModule = options.typescript;
+  const factory = tsModule.factory;
   const computedName = node.name.getText()
 
   return {
@@ -11,20 +12,20 @@ export const convertGetter: ASTConverter<ts.GetAccessorDeclaration> = (node, opt
     kind: ASTResultKind.COMPOSITION,
     imports: [{
       named: ['computed'],
-      external: (options.compatible) ? '@vue/composition-api' : 'vue'
+      external: 'vue'
     }],
     reference: ReferenceKind.VARIABLE,
     attributes: [computedName],
     nodes: [
       copySyntheticComments(
         tsModule,
-        tsModule.createArrowFunction(
+        factory.createArrowFunction(
           undefined,
           undefined,
           [],
           undefined,
-          tsModule.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
-          node.body ?? tsModule.createBlock([])
+          factory.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
+          node.body ?? factory.createBlock([])
         ),
         node
       )
@@ -33,7 +34,8 @@ export const convertGetter: ASTConverter<ts.GetAccessorDeclaration> = (node, opt
 }
 
 export const convertSetter: ASTConverter<ts.SetAccessorDeclaration> = (node, options) => {
-  const tsModule = options.typescript
+  const tsModule = options.typescript;
+  const factory = tsModule.factory;
   const computedName = node.name.getText()
 
   return {
@@ -41,20 +43,20 @@ export const convertSetter: ASTConverter<ts.SetAccessorDeclaration> = (node, opt
     kind: ASTResultKind.COMPOSITION,
     imports: [{
       named: ['computed'],
-      external: (options.compatible) ? '@vue/composition-api' : 'vue'
+      external: 'vue'
     }],
     reference: ReferenceKind.VARIABLE,
     attributes: [computedName],
     nodes: [
       copySyntheticComments(
         tsModule,
-        tsModule.createArrowFunction(
+        factory.createArrowFunction(
           undefined,
           node.typeParameters,
           node.parameters,
           undefined,
-          tsModule.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
-          node.body ?? tsModule.createBlock([])
+          factory.createToken(tsModule.SyntaxKind.EqualsGreaterThanToken),
+          node.body ?? factory.createBlock([])
         ),
         node
       )
@@ -63,7 +65,8 @@ export const convertSetter: ASTConverter<ts.SetAccessorDeclaration> = (node, opt
 }
 
 export const mergeComputed: ASTTransform = (astResults, options) => {
-  const tsModule = options.typescript
+  const tsModule = options.typescript;
+  const factory = tsModule.factory;
   const getterASTResults = astResults.filter((el) => el.tag === 'Computed-getter')
   const setterASTResults = astResults.filter((el) => el.tag === 'Computed-setter')
   const otherASTResults = astResults.filter((el) => el.tag !== 'Computed-getter' && el.tag !== 'Computed-setter')
@@ -78,24 +81,25 @@ export const mergeComputed: ASTTransform = (astResults, options) => {
     const leadingComments = (setter) ? [] : tsModule.getSyntheticLeadingComments(getter.nodes[0])
     const trailingComments = (setter) ? [] : tsModule.getSyntheticTrailingComments(getter.nodes[0])
 
-    const resultNode = tsModule.createVariableStatement(
+    const resultNode = factory.createVariableStatement(
       undefined,
-      tsModule.createVariableDeclarationList([
-        tsModule.createVariableDeclaration(
-          tsModule.createIdentifier(getterName),
+      factory.createVariableDeclarationList([
+        factory.createVariableDeclaration(
+          factory.createIdentifier(getterName),
           undefined,
-          tsModule.createCall(
-            tsModule.createIdentifier('computed'),
+          undefined,
+          factory.createCallExpression(
+            factory.createIdentifier('computed'),
             undefined,
             [
               (setter)
-                ? tsModule.createObjectLiteral([
-                  tsModule.createPropertyAssignment(
-                    tsModule.createIdentifier('get'),
+                ? factory.createObjectLiteralExpression([
+                  factory.createPropertyAssignment(
+                    factory.createIdentifier('get'),
                     getter.nodes[0] as ts.Expression
                   ),
-                  tsModule.createPropertyAssignment(
-                    tsModule.createIdentifier('set'),
+                  factory.createPropertyAssignment(
+                    factory.createIdentifier('set'),
                     setter.nodes[0] as ts.Expression
                   )
                 ], true)
@@ -112,7 +116,7 @@ export const mergeComputed: ASTTransform = (astResults, options) => {
       kind: ASTResultKind.COMPOSITION,
       imports: [{
         named: ['computed'],
-        external: (options.compatible) ? '@vue/composition-api' : 'vue'
+        external: 'vue'
       }],
       reference: ReferenceKind.VARIABLE_VALUE,
       attributes: [getterName],

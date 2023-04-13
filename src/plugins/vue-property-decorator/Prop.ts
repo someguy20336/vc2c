@@ -1,38 +1,37 @@
 import { ASTConverter, ASTResultKind, ASTTransform, ASTResultToObject, ReferenceKind } from '../types'
 import type ts from 'typescript'
-import { copySyntheticComments } from '../../utils'
+import { copySyntheticComments, getDecorator } from '../../utils'
 
 const propDecoratorName = 'Prop'
 
 export const convertProp: ASTConverter<ts.PropertyDeclaration> = (node, options) => {
-  if (!node.decorators) {
-    return false
-  }
-  const decorator = node.decorators.find((el) => (el.expression as ts.CallExpression).expression.getText() === propDecoratorName)
-  if (decorator) {
-    const tsModule = options.typescript
-    const decoratorArguments = (decorator.expression as ts.CallExpression).arguments
-    if (decoratorArguments.length > 0) {
-      const propName = node.name.getText()
-      const propArguments = decoratorArguments[0]
 
-      return {
-        tag: 'Prop',
-        kind: ASTResultKind.OBJECT,
-        imports: [],
-        reference: ReferenceKind.PROPS,
-        attributes: [propName],
-        nodes: [
-          copySyntheticComments(
-            tsModule,
-            tsModule.createPropertyAssignment(
-              tsModule.createIdentifier(propName),
-              propArguments
-            ),
-            node
-          )
-        ]
-      }
+  const tsModule = options.typescript;
+  const factory = tsModule.factory;
+  const decorator = getDecorator(tsModule, node, propDecoratorName);
+  if (decorator) {
+    
+    const decoratorArguments = (decorator.expression as ts.CallExpression).arguments
+
+    const propName = node.name.getText()
+    const propArguments = decoratorArguments.length > 0 ? decoratorArguments[0] : factory.createObjectLiteralExpression();
+
+    return {
+      tag: 'Prop',
+      kind: ASTResultKind.OBJECT,
+      imports: [],
+      reference: ReferenceKind.PROPS,
+      attributes: [propName],
+      nodes: [
+        copySyntheticComments(
+          tsModule,
+          factory.createPropertyAssignment(
+            factory.createIdentifier(propName),
+            propArguments
+          ),
+          node
+        )
+      ]
     }
   }
 
@@ -40,6 +39,7 @@ export const convertProp: ASTConverter<ts.PropertyDeclaration> = (node, options)
 }
 export const mergeProps: ASTTransform = (astResults, options) => {
   const tsModule = options.typescript
+  const factory = tsModule.factory;
   const propTags = ['Prop', 'Model']
 
   const propASTResults = astResults.filter((el) => propTags.includes(el.tag))
@@ -53,9 +53,9 @@ export const mergeProps: ASTTransform = (astResults, options) => {
     reference: ReferenceKind.PROPS,
     attributes: propASTResults.map((el) => el.attributes).reduce((array, el) => array.concat(el), []),
     nodes: [
-      tsModule.createPropertyAssignment(
-        tsModule.createIdentifier('props'),
-        tsModule.createObjectLiteral(
+      factory.createPropertyAssignment(
+        factory.createIdentifier('props'),
+        factory.createObjectLiteralExpression(
           [
             ...propASTResults.map((el) => (el.tag === 'Prop') ? el.nodes : [el.nodes[1]])
               .reduce((array, el) => array.concat(el), [] as ts.ObjectLiteralElementLike[])

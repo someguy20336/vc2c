@@ -15,6 +15,6 @@ describe('test convertRender', () => {
 
     const result = convert(content, {})
 
-    expect(result).toMatchSnapshot()
+    expect(result.convertedContent).toMatchSnapshot()
   })
 })
